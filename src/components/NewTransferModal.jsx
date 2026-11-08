@@ -137,18 +137,18 @@ export default function NewTransferModal({ isOpen, onClose, initialSelectedProdu
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#161B23] border border-[#2B3547] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-[#161B23] border border-[#2B3547] rounded-2xl w-full max-w-2xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Modal Header */}
-        <div className="p-5 border-b border-[#242C3C] flex items-center justify-between bg-[#13171F]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/40 text-white border border-orange-400/40">
+        <div className="p-4 sm:p-5 border-b border-[#242C3C] flex items-center justify-between bg-[#13171F]">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/40 text-white border border-orange-400/40 shrink-0">
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Create Delivery Challan (Dispatch)</h2>
-              <p className="text-xs text-slate-400">Dispatch materials from Main Warehouse to a Project Site</p>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">Create Delivery Challan (Dispatch)</h2>
+              <p className="text-[11px] sm:text-xs text-slate-400">Dispatch materials from Main Warehouse to Site</p>
             </div>
           </div>
           <button 
@@ -160,7 +160,7 @@ export default function NewTransferModal({ isOpen, onClose, initialSelectedProdu
         </div>
 
         {/* Modal Body / Form */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1">
           
           {errorMessage && (
             <div className="bg-rose-500/15 border border-rose-500/30 p-3 rounded-xl flex items-start gap-2.5 text-xs text-rose-300">

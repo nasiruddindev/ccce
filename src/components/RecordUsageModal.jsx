@@ -88,21 +88,21 @@ export default function RecordUsageModal({ isOpen, onClose, initialProduct, init
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#161B23] border border-[#2B3547] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-[#161B23] border border-[#2B3547] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
         
         {/* Header */}
-        <div className="p-4 border-b border-[#242C3C] flex items-center justify-between bg-[#13171F]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30">
-              <Wrench className="w-5 h-5 text-orange-400" />
+        <div className="p-3.5 sm:p-4 border-b border-[#242C3C] flex items-center justify-between bg-[#13171F]">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30 shrink-0">
+              <Wrench className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white tracking-tight">
-                Record Site Material Consumption (কাজে খরচ করা)
+              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                Record Site Material Usage (কাজে খরচ করা)
               </h2>
-              <p className="text-[11px] text-slate-400">
-                Deduct materials installed on site and record task details
+              <p className="text-[10px] sm:text-[11px] text-slate-400">
+                Deduct installed materials and record task details
               </p>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function RecordUsageModal({ isOpen, onClose, initialProduct, init
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 text-xs overflow-y-auto flex-1">
           
           {errorMsg && (
             <div className="bg-rose-500/15 border border-rose-500/30 p-3 rounded-xl flex items-start gap-2 text-rose-300">

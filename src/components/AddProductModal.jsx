@@ -40,16 +40,16 @@ export default function AddProductModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#161B23] border border-[#2B3547] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-[#161B23] border border-[#2B3547] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[94vh] flex flex-col">
         
         {/* Header */}
-        <div className="p-4 border-b border-[#242C3C] flex items-center justify-between bg-[#13171F]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30">
+        <div className="p-3.5 sm:p-4 border-b border-[#242C3C] flex items-center justify-between bg-[#13171F]">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30 shrink-0">
               <Boxes className="w-4 h-4" />
             </div>
-            <h2 className="text-base font-bold text-white">Add New Electrical Product</h2>
+            <h2 className="text-sm sm:text-base font-bold text-white">Add New Electrical Product</h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
             <X className="w-4 h-4" />
@@ -57,7 +57,7 @@ export default function AddProductModal({ isOpen, onClose }) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 text-xs overflow-y-auto flex-1">
           <div>
             <label className="block text-slate-300 font-medium mb-1">Product Name & Grade *</label>
             <input

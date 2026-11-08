@@ -27,22 +27,22 @@ export default function BranchesView({ onOpenNewTransfer, setSelectedLocation, s
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-20 md:pb-6">
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-orange-400" />
+          <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-orange-400 shrink-0" />
             <span>Warehouses & Project Sites Directory</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Main Central Warehouse and affiliated project sites where materials are delivered
+          <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+            Main Central Warehouse and affiliated project sites
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-950/40 border border-orange-400/30 transition transform active:scale-95 cursor-pointer"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-950/40 border border-orange-400/30 transition transform active:scale-95 cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>Add New Project Site</span>
@@ -50,7 +50,7 @@ export default function BranchesView({ onOpenNewTransfer, setSelectedLocation, s
       </div>
 
       {/* Grid of Locations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
         {branches.map((b) => {
           // Count total items and distinct SKUs at this branch
           const totalUnits = products.reduce((acc, p) => acc + Number(p.stock?.[b.id] || 0), 0);

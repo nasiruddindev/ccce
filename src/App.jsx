@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { InventoryProvider, useInventory } from "./context/InventoryContext";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import MobileBottomNav from "./components/MobileBottomNav";
 import DashboardView from "./components/DashboardView";
 import InventoryView from "./components/InventoryView";
 import TransferView from "./components/TransferView";
@@ -68,11 +69,13 @@ function MainAppContent() {
           setIsNewTransferOpen(true);
         }}
         onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
 
       {/* Main Layout */}
       <div className="flex-1 flex max-w-7xl w-full mx-auto">
-        {/* Left Sidebar */}
+        {/* Left Sidebar (Hidden on mobile, visible md+) */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -80,7 +83,7 @@ function MainAppContent() {
         />
 
         {/* Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-5 lg:p-8 overflow-y-auto w-full max-w-full">
           {activeTab === "dashboard" && (
             <DashboardView
               onOpenNewTransfer={() => {
@@ -131,6 +134,12 @@ function MainAppContent() {
           )}
         </main>
       </div>
+
+      {/* Mobile Fixed Bottom Navigation Bar (Visible only on mobile < md) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
       {/* Modals */}
       <NewTransferModal

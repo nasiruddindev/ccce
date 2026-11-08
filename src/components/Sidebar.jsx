@@ -52,7 +52,7 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenFirebaseModal }
   ];
 
   return (
-    <aside className="w-64 bg-[#12161E] border-r border-[#222936] flex flex-col justify-between p-4 min-h-[calc(100vh-4rem)]">
+    <aside className="hidden md:flex md:w-64 shrink-0 bg-[#12161E] border-r border-[#222936] flex-col justify-between p-4 min-h-[calc(100vh-4rem)]">
       <div>
         <div className="text-[11px] uppercase tracking-wider font-mono text-slate-400 font-bold px-3 mb-2">
           Operations

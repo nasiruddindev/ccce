@@ -9,24 +9,24 @@ export default function ChallanModal({ transfer, isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in overflow-y-auto">
-      <div className="bg-[#161B23] border border-[#2E3747] rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+      <div className="bg-[#161B23] border border-[#2E3747] rounded-2xl w-full max-w-3xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden my-auto">
         
         {/* Modal Top Bar (Hidden on print) */}
-        <div className="p-4 border-b border-[#252C3B] flex items-center justify-between bg-[#13161E] no-print">
+        <div className="p-3 sm:p-4 border-b border-[#252C3B] flex items-center justify-between bg-[#13161E] no-print">
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-mono font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
-              Challan Preview
+            <span className="text-[10px] sm:text-xs uppercase font-mono font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+              Challan
             </span>
-            <span className="text-sm font-semibold text-white">{transfer.challanNo}</span>
+            <span className="text-xs sm:text-sm font-semibold text-white">{transfer.challanNo}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md transition cursor-pointer"
+              className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Challan / Gate Pass</span>
+              <span>Print Gate Pass</span>
             </button>
             <button
               onClick={onClose}
@@ -37,8 +37,9 @@ export default function ChallanModal({ transfer, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Printable Document Sheet (White paper styling for clean print!) */}
-        <div className="p-6 md:p-8 overflow-y-auto flex-1 bg-white text-slate-900 font-sans print:p-0">
+        {/* Printable Document Sheet (Scrollable horizontally on mobile) */}
+        <div className="overflow-x-auto overflow-y-auto flex-1 bg-white print:p-0">
+          <div className="p-4 sm:p-6 md:p-8 min-w-[560px] md:min-w-0 text-slate-900 font-sans">
           
           {/* Header */}
           <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
@@ -199,6 +200,7 @@ export default function ChallanModal({ transfer, isOpen, onClose }) {
             This is an official VoltFlow CCC materials gate pass. Any discrepancies must be reported to Tejgaon Logistics within 24 hours.
           </div>
 
+          </div>
         </div>
 
       </div>
