@@ -163,7 +163,7 @@ export const InventoryProvider = ({ children }) => {
     setCurrentRole(newRole);
   };
 
-  // Add a transfer
+  // Add a transfer (Atomic Deduction from Source Substation)
   const createTransfer = (transferData) => {
     const challanNo = `CH-${new Date().getFullYear()}-${String(transfers.length + 183).padStart(4, "0")}`;
     const newTransfer = {
@@ -176,7 +176,25 @@ export const InventoryProvider = ({ children }) => {
 
     setTransfers(prev => [newTransfer, ...prev]);
 
-    // Add corresponding movement records
+    // Atomic stock deduction from source branch
+    setProducts(prevProducts =>
+      prevProducts.map(p => {
+        const item = (transferData.items || []).find(i => (i.productId || i.id) === (p.id || p.productId));
+        if (item) {
+          const currentQty = Number(p.stock?.[transferData.fromLocationId]) || 0;
+          return {
+            ...p,
+            stock: {
+              ...p.stock,
+              [transferData.fromLocationId]: Math.max(0, currentQty - Number(item.quantity))
+            }
+          };
+        }
+        return p;
+      })
+    );
+
+    // Add corresponding immutable movement records
     const newMovements = (transferData.items || []).map(item => ({
       id: `mov_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       date: new Date().toISOString(),
@@ -189,7 +207,7 @@ export const InventoryProvider = ({ children }) => {
       quantity: -Number(item.quantity),
       unit: item.unit,
       referenceNo: challanNo,
-      performedBy: transferData.dispatchedBy || currentUser.name,
+      performedBy: transferData.dispatchedBy || currentUser?.name || "Station Lead",
       status: "In Transit"
     }));
 
@@ -197,12 +215,51 @@ export const InventoryProvider = ({ children }) => {
     return newTransfer;
   };
 
-  // Mark transfer as received
+  // Mark transfer as received (Atomic Credit to Destination Substation)
   const markTransferReceived = (transferId) => {
+    const targetTransfer = transfers.find(t => t.id === transferId);
+    if (!targetTransfer || targetTransfer.status === "received") return;
+
+    // Credit inventory to destination branch
+    setProducts(prevProducts =>
+      prevProducts.map(p => {
+        const item = (targetTransfer.items || []).find(i => (i.productId || i.id) === (p.id || p.productId));
+        if (item) {
+          const currentQty = Number(p.stock?.[targetTransfer.toLocationId]) || 0;
+          return {
+            ...p,
+            stock: {
+              ...p.stock,
+              [targetTransfer.toLocationId]: currentQty + Number(item.quantity)
+            }
+          };
+        }
+        return p;
+      })
+    );
+
+    // Add 'Transfer In' movement record
+    const inMovements = (targetTransfer.items || []).map(item => ({
+      id: `mov_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      date: new Date().toISOString(),
+      type: "Transfer In",
+      productId: item.productId,
+      productName: item.productName,
+      sku: item.sku,
+      sourceBranch: targetTransfer.fromLocationName,
+      destinationBranch: targetTransfer.toLocationName,
+      quantity: Number(item.quantity),
+      unit: item.unit,
+      referenceNo: targetTransfer.challanNo,
+      performedBy: currentUser?.name || "Station Lead",
+      status: "Completed"
+    }));
+    setMovements(prev => [...inMovements, ...prev]);
+
     setTransfers(prev =>
       prev.map(t =>
         t.id === transferId
-          ? { ...t, status: "received", receivedDate: new Date().toISOString(), receivedBy: currentUser.name }
+          ? { ...t, status: "received", receivedDate: new Date().toISOString(), receivedBy: currentUser?.name || "Station Lead" }
           : t
       )
     );

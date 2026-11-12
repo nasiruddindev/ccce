@@ -2,108 +2,170 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if request is authenticated
+    // -------------------------------------------------------------------------
+    // AUTHENTICATION & ROLE VALIDATION HELPERS
+    // -------------------------------------------------------------------------
+    
+    // Check if user is authenticated
     function isAuthenticated() {
-      return request.auth != null;
+      return request.auth != null && request.auth.uid != null;
     }
 
-    // Helper function to get user document
-    function getUserData() {
+    // Safely retrieve user document from Firestore
+    function getUserDoc() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Helper function to check if user is active
+    // Check if user account is active
     function isUserActive() {
       return isAuthenticated() && (
         !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-        getUserData().isActive == true
+        getUserDoc().isActive != false
       );
     }
 
-    // Helper function to check if authenticated user is Main Admin
+    // Check if user has Main Admin role (Checks token custom claims or verified Firestore doc)
     function isMainAdmin() {
-      return isAuthenticated() && (
+      return isAuthenticated() && isUserActive() && (
         request.auth.token.role == 'Main Admin' || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'Main Admin')
+        request.auth.token.isAdmin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().role == 'Main Admin')
       );
     }
 
-    // Helper function to check if user is Branch Engineer
+    // Check if user is Branch Engineer
     function isBranchEngineer() {
-      return isAuthenticated() && (
+      return isAuthenticated() && isUserActive() && (
         request.auth.token.role == 'Branch Engineer' || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'Branch Engineer')
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().role == 'Branch Engineer')
       );
     }
 
-    // Helper function to verify assigned branch
+    // Retrieve the verified substation branch assigned to the engineer
     function getAssignedBranch() {
-      return getUserData().branchId;
+      return getUserDoc().branchId;
     }
 
-    // --- USERS COLLECTION ---
+    // -------------------------------------------------------------------------
+    // 1. USERS COLLECTION (Role Escalation Protection)
+    // -------------------------------------------------------------------------
     match /users/{userId} {
-      // Authenticated users can read user profiles
+      // Authenticated users can view user directory
       allow read: if isAuthenticated();
 
-      // Allow creating user document if:
-      // 1. It is the user's own profile during initial signup/bootstrap (request.auth.uid == userId)
-      // 2. OR it is created by an authenticated Main Admin
+      // Only Main Admin can create user profiles (or initial admin during bootstrap)
       allow create: if isAuthenticated() && (
-        request.auth.uid == userId || isMainAdmin()
+        isMainAdmin() || request.auth.uid == userId
       );
 
-      // Only Main Admin can update roles or status
-      // Users can update their own profile details, but NOT their role or isActive status
+      // Only Main Admin can update roles, assigned branch, or activation status.
+      // Normal users may ONLY update non-sensitive profile details (phone, avatar, displayName).
       allow update: if isAuthenticated() && (
         isMainAdmin() || (
           request.auth.uid == userId &&
           request.resource.data.role == resource.data.role &&
+          request.resource.data.branchId == resource.data.branchId &&
           request.resource.data.isActive == resource.data.isActive
         )
       );
 
-      // Only Main Admin can delete
+      // Only Main Admin can delete user documents
       allow delete: if isMainAdmin();
     }
 
-    // --- PRODUCTS & CATEGORIES ---
+    // -------------------------------------------------------------------------
+    // 2. PRODUCTS & INVENTORY (Direct Modification Protection)
+    // -------------------------------------------------------------------------
     match /products/{productId} {
+      // Authenticated users can view products catalog and stock levels
       allow read: if isAuthenticated();
-      allow write: if isMainAdmin();
+
+      // Engineers must NEVER directly modify inventory or product documents!
+      // All stock-changing operations must go through Main Admin or trusted Cloud Functions.
+      allow create: if isMainAdmin();
+      allow update: if isMainAdmin();
+      allow delete: if isMainAdmin();
     }
 
+    // Categories Collection
     match /categories/{categoryId} {
       allow read: if isAuthenticated();
-      allow write: if isMainAdmin();
+      allow create, update, delete: if isMainAdmin();
     }
 
-    // --- BRANCHES / SUBSTATIONS ---
+    // -------------------------------------------------------------------------
+    // 3. BRANCHES & SUBSTATIONS (Central Hub Safeguard)
+    // -------------------------------------------------------------------------
     match /branches/{branchId} {
       allow read: if isAuthenticated();
-      allow write: if isMainAdmin();
-    }
-
-    // --- STOCK TRANSFERS & CHALLANS ---
-    match /transfers/{transferId} {
-      allow read: if isAuthenticated();
       
-      // Main Admin can dispatch from any substation
-      // Branch Engineer can ONLY dispatch from their assigned substation!
-      allow create: if isMainAdmin() || (
-        isBranchEngineer() && 
-        request.resource.data.fromLocationId == getAssignedBranch()
+      // Admin can create or update branches
+      allow create: if isMainAdmin();
+      
+      // Protect Central Main Hub from deactivation:
+      allow update: if isMainAdmin() && (
+        resource.data.isMain != true || request.resource.data.status == 'Active'
       );
 
-      // Main Admin or recipient branch can update status
-      allow update: if isAuthenticated();
+      // Soft-deletion only: Historical branches must not be hard deleted
+      allow delete: if false;
     }
 
-    // --- STOCK MOVEMENTS AUDIT LOG ---
+    // -------------------------------------------------------------------------
+    // 4. TRANSFERS & CHALLANS (Substation Scope & Idempotency)
+    // -------------------------------------------------------------------------
+    match /transfers/{transferId} {
+      allow read: if isAuthenticated();
+
+      // Main Admin can create transfer from any location.
+      // Branch Engineer can ONLY dispatch from their explicitly assigned substation!
+      allow create: if isAuthenticated() && (
+        isMainAdmin() || (
+          isBranchEngineer() && 
+          request.resource.data.fromLocationId == getAssignedBranch() &&
+          request.resource.data.status == 'in_transit'
+        )
+      );
+
+      // Status updates:
+      // - Main Admin can update transfer.
+      // - Receiving Branch Engineer can ONLY confirm receipt for their own destination substation!
+      // - Once received, status CANNOT be reverted to 'in_transit'.
+      allow update: if isAuthenticated() && (
+        isMainAdmin() || (
+          isBranchEngineer() &&
+          resource.data.toLocationId == getAssignedBranch() &&
+          resource.data.status == 'in_transit' &&
+          request.resource.data.status == 'received'
+        )
+      );
+
+      // Immutability: Challans cannot be deleted to preserve shipping audit trails
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. STOCK MOVEMENTS (Strict Ledger Immutability)
+    // -------------------------------------------------------------------------
     match /movements/{movementId} {
       allow read: if isAuthenticated();
+      
+      // Stock movement ledger is append-only
       allow create: if isAuthenticated();
-      allow update, delete: if isMainAdmin();
+
+      // Ledger records are strictly IMMUTABLE: cannot be updated or deleted by anyone!
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. AUDIT LOGS & SYSTEM ACTIVITY
+    // -------------------------------------------------------------------------
+    match /auditLogs/{logId} {
+      allow read: if isMainAdmin();
+      allow create: if isAuthenticated();
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

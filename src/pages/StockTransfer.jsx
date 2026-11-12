@@ -119,7 +119,7 @@ export default function StockTransfer() {
       vehicleNo,
       driverName,
       driverPhone,
-      dispatchedBy: currentUser.name,
+      dispatchedBy: userProfile?.fullName || userProfile?.name || "Station Lead",
       notes,
       items: [
         {

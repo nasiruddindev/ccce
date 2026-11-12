@@ -12,16 +12,34 @@ import {
   Plus
 } from "lucide-react";
 import { useInventory } from "../context/InventoryContext";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import Badge from "../components/common/Badge";
 import Modal from "../components/common/Modal";
 
 export default function TransferHistory() {
   const { transfers, markTransferReceived } = useInventory();
+  const { userProfile, isAdmin, isEngineer } = useAuth();
+  const { addToast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [isChallanModalOpen, setIsChallanModalOpen] = useState(false);
+
+  const handleReceive = (transfer) => {
+    // Role check: Only Main Admin or Engineer assigned to destination substation can receive
+    if (!isAdmin && isEngineer && transfer.toLocationId !== userProfile?.branchId) {
+      addToast(
+        `Permission Denied: This shipment is designated for '${transfer.toLocationName}'. You can only confirm receipt for your assigned substation.`,
+        "error"
+      );
+      return;
+    }
+
+    markTransferReceived(transfer.id);
+    addToast(`Delivery confirmed for Challan ${transfer.challanNo}. Stock credited to ${transfer.toLocationName}.`, "success");
+  };
 
   const filteredTransfers = transfers.filter((t) => {
     const matchesSearch =
@@ -161,9 +179,17 @@ export default function TransferHistory() {
 
                       {t.status === "in_transit" && (
                         <button
-                          onClick={() => markTransferReceived(t.id)}
-                          className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold transition"
-                          title="Confirm Delivery Receipt"
+                          onClick={() => handleReceive(t)}
+                          className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                            isAdmin || t.toLocationId === userProfile?.branchId
+                              ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                              : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          }`}
+                          title={
+                            isAdmin || t.toLocationId === userProfile?.branchId
+                              ? "Confirm Delivery Receipt"
+                              : "Only the destination substation engineer can receive this shipment"
+                          }
                         >
                           Receive
                         </button>
