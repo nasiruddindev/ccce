@@ -840,6 +840,54 @@ export const initialMovements = [
     referenceNo: "CH-2026-0179",
     performedBy: "Engr. Rafiqul Islam",
     status: "Completed"
+  },
+  {
+    id: "mov_107",
+    date: "2026-11-01T15:20:00.000Z",
+    type: "Stock Adjustment",
+    productId: "prod_1",
+    productName: "BYA 2.5 rm Single Core Cable",
+    sku: "CBL-BYA-2.5-FR",
+    sourceBranch: "Gazaria 230 KV Substation",
+    destinationBranch: "Gazaria 230 KV Substation",
+    quantity: -25,
+    unit: "Meters",
+    referenceNo: "ADJ-2026-004",
+    reason: "Damaged insulation during heavy monsoon storage",
+    performedBy: "Engr. Rafiqul Islam",
+    status: "Reconciled"
+  },
+  {
+    id: "mov_108",
+    date: "2026-10-28T11:10:00.000Z",
+    type: "Stock Adjustment",
+    productId: "prod_4",
+    productName: "ABB System Pro M 63A MCB",
+    sku: "SWG-ABB-MCB-63A",
+    sourceBranch: "Kaliakoir 230 KV Substation",
+    destinationBranch: "Kaliakoir 230 KV Substation",
+    quantity: 5,
+    unit: "Pcs",
+    referenceNo: "ADJ-2026-003",
+    reason: "Physical audit inventory surplus reconciliation",
+    performedBy: "Engr. Tanvir Ahmed",
+    status: "Reconciled"
+  },
+  {
+    id: "mov_109",
+    date: "2026-10-25T14:00:00.000Z",
+    type: "Stock Adjustment",
+    productId: "prod_9",
+    productName: "Pure Copper Bonded Earthing Rod",
+    sku: "ERT-COP-ROD-10FT",
+    sourceBranch: "Kobirpur 230 KV Substation",
+    destinationBranch: "Kobirpur 230 KV Substation",
+    quantity: -2,
+    unit: "Sets",
+    referenceNo: "ADJ-2026-002",
+    reason: "Site testing calibration wear and tear write-off",
+    performedBy: "Engr. Sajjad Hossain",
+    status: "Reconciled"
   }
 ];
 
