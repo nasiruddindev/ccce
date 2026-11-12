@@ -1,199 +1,106 @@
-import React, { useState } from "react";
-import { InventoryProvider, useInventory } from "./context/InventoryContext";
-import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
-import MobileBottomNav from "./components/MobileBottomNav";
-import DashboardView from "./components/DashboardView";
-import InventoryView from "./components/InventoryView";
-import TransferView from "./components/TransferView";
-import SiteUsageView from "./components/SiteUsageView";
-import BranchesView from "./components/BranchesView";
-import NewTransferModal from "./components/NewTransferModal";
-import ChallanModal from "./components/ChallanModal";
-import AddProductModal from "./components/AddProductModal";
-import StockInModal from "./components/StockInModal";
-import RecordUsageModal from "./components/RecordUsageModal";
-import FirebaseConfigModal from "./components/FirebaseConfigModal";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { InventoryProvider } from "./context/InventoryContext";
+import { ToastProvider } from "./context/ToastContext";
+import AppLayout from "./components/layout/AppLayout";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-function MainAppContent() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [isNewTransferOpen, setIsNewTransferOpen] = useState(false);
-  const [selectedProductForTransfer, setSelectedProductForTransfer] = useState(null);
-  
-  const [isChallanModalOpen, setIsChallanModalOpen] = useState(false);
-  const [selectedTransferForChallan, setSelectedTransferForChallan] = useState(null);
+// Authentication & Access Pages
+import Login from "./pages/Login";
+import Unauthorized from "./pages/Unauthorized";
 
-  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
-  const [isStockInOpen, setIsStockInOpen] = useState(false);
-
-  // Material consumption state
-  const [isRecordUsageOpen, setIsRecordUsageOpen] = useState(false);
-  const [selectedProductForUsage, setSelectedProductForUsage] = useState(null);
-  const [selectedLocationForUsage, setSelectedLocationForUsage] = useState(null);
-
-  const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
-
-  const { setSelectedLocation } = useInventory();
-
-  // Handle open transfer modal from specific product button
-  const handleOpenTransferWithItem = (product) => {
-    setSelectedProductForTransfer(product);
-    setIsNewTransferOpen(true);
-  };
-
-  // Handle open site usage modal from specific product / location
-  const handleOpenRecordUsageWithItem = (product = null, locationId = null) => {
-    setSelectedProductForUsage(product);
-    setSelectedLocationForUsage(locationId);
-    setIsRecordUsageOpen(true);
-  };
-
-  // Handle view challan
-  const handleViewChallan = (transfer) => {
-    setSelectedTransferForChallan(transfer);
-    setIsChallanModalOpen(true);
-  };
-
-  // When a transfer is created, offer to preview its gate pass
-  const handleTransferCreated = (newTransfer) => {
-    setSelectedTransferForChallan(newTransfer);
-    setIsChallanModalOpen(true);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#0F1217] text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
-      {/* Top Navbar */}
-      <Navbar
-        onOpenNewTransfer={() => {
-          setSelectedProductForTransfer(null);
-          setIsNewTransferOpen(true);
-        }}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
-
-      {/* Main Layout */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
-        {/* Left Sidebar (Hidden on mobile, visible md+) */}
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
-        />
-
-        {/* Content Area */}
-        <main className="flex-1 p-3 sm:p-5 lg:p-8 overflow-y-auto w-full max-w-full">
-          {activeTab === "dashboard" && (
-            <DashboardView
-              onOpenNewTransfer={() => {
-                setSelectedProductForTransfer(null);
-                setIsNewTransferOpen(true);
-              }}
-              onOpenAddProduct={() => setIsAddProductOpen(true)}
-              onViewChallan={handleViewChallan}
-              onOpenRecordUsage={() => handleOpenRecordUsageWithItem()}
-              setActiveTab={setActiveTab}
-            />
-          )}
-
-          {activeTab === "transfers" && (
-            <TransferView
-              onOpenNewTransfer={() => {
-                setSelectedProductForTransfer(null);
-                setIsNewTransferOpen(true);
-              }}
-              onViewChallan={handleViewChallan}
-            />
-          )}
-
-          {activeTab === "inventory" && (
-            <InventoryView
-              onOpenNewTransferWithItem={handleOpenTransferWithItem}
-              onOpenAddProduct={() => setIsAddProductOpen(true)}
-              onOpenStockIn={() => setIsStockInOpen(true)}
-              onOpenRecordUsageWithItem={handleOpenRecordUsageWithItem}
-            />
-          )}
-
-          {activeTab === "usage" && (
-            <SiteUsageView
-              onOpenRecordUsage={() => handleOpenRecordUsageWithItem()}
-            />
-          )}
-
-          {activeTab === "branches" && (
-            <BranchesView
-              onOpenNewTransfer={() => {
-                setSelectedProductForTransfer(null);
-                setIsNewTransferOpen(true);
-              }}
-              setSelectedLocation={setSelectedLocation}
-              setActiveTab={setActiveTab}
-            />
-          )}
-        </main>
-      </div>
-
-      {/* Mobile Fixed Bottom Navigation Bar (Visible only on mobile < md) */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
-
-      {/* Modals */}
-      <NewTransferModal
-        isOpen={isNewTransferOpen}
-        onClose={() => {
-          setIsNewTransferOpen(false);
-          setSelectedProductForTransfer(null);
-        }}
-        initialSelectedProduct={selectedProductForTransfer}
-        onTransferSuccess={handleTransferCreated}
-      />
-
-      <ChallanModal
-        isOpen={isChallanModalOpen}
-        transfer={selectedTransferForChallan}
-        onClose={() => {
-          setIsChallanModalOpen(false);
-          setSelectedTransferForChallan(null);
-        }}
-      />
-
-      <AddProductModal
-        isOpen={isAddProductOpen}
-        onClose={() => setIsAddProductOpen(false)}
-      />
-
-      <StockInModal
-        isOpen={isStockInOpen}
-        onClose={() => setIsStockInOpen(false)}
-      />
-
-      <RecordUsageModal
-        isOpen={isRecordUsageOpen}
-        onClose={() => {
-          setIsRecordUsageOpen(false);
-          setSelectedProductForUsage(null);
-          setSelectedLocationForUsage(null);
-        }}
-        initialProduct={selectedProductForUsage}
-        initialLocationId={selectedLocationForUsage}
-      />
-
-      <FirebaseConfigModal
-        isOpen={isFirebaseModalOpen}
-        onClose={() => setIsFirebaseModalOpen(false)}
-      />
-    </div>
-  );
-}
+// 15 Operational Pages
+import Dashboard from "./pages/Dashboard";
+import Products from "./pages/Products";
+import ProductDetails from "./pages/ProductDetails";
+import Categories from "./pages/Categories";
+import AllBranches from "./pages/AllBranches";
+import BranchDetails from "./pages/BranchDetails";
+import BranchInventory from "./pages/BranchInventory";
+import StockTransfer from "./pages/StockTransfer";
+import TransferHistory from "./pages/TransferHistory";
+import StockMovementHistory from "./pages/StockMovementHistory";
+import LowStock from "./pages/LowStock";
+import Users from "./pages/Users";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
-    <InventoryProvider>
-      <MainAppContent />
-    </InventoryProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <InventoryProvider>
+          <BrowserRouter>
+          <Routes>
+            {/* Public Authentication Route */}
+            <Route path="/login" element={<Login />} />
+
+            {/* Protected Enterprise SaaS Application */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Common Accessible Routes (Main Admin & Branch Engineer) */}
+              <Route index element={<Dashboard />} />
+              <Route path="products" element={<Products />} />
+              <Route path="products/:id" element={<ProductDetails />} />
+              <Route path="branch-inventory" element={<BranchInventory />} />
+              <Route path="stock-transfer" element={<StockTransfer />} />
+              <Route path="transfer-history" element={<TransferHistory />} />
+              <Route path="stock-movements" element={<StockMovementHistory />} />
+              <Route path="low-stock" element={<LowStock />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="branches/:id" element={<BranchDetails />} />
+              <Route path="unauthorized" element={<Unauthorized />} />
+
+              {/* Administrative Only Protected Routes (Main Admin) */}
+              <Route
+                path="users"
+                element={
+                  <ProtectedRoute allowedRoles={["Main Admin"]}>
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute allowedRoles={["Main Admin"]}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="categories"
+                element={
+                  <ProtectedRoute allowedRoles={["Main Admin"]}>
+                    <Categories />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="branches"
+                element={
+                  <ProtectedRoute allowedRoles={["Main Admin"]}>
+                    <AllBranches />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </InventoryProvider>
+    </AuthProvider>
+  </ToastProvider>
   );
 }

@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to get user document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Helper function to check if user is active
+    function isUserActive() {
+      return isAuthenticated() && (
+        !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+        getUserData().isActive == true
+      );
+    }
+
+    // Helper function to check if authenticated user is Main Admin
+    function isMainAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'Main Admin' || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'Main Admin')
+      );
+    }
+
+    // Helper function to check if user is Branch Engineer
+    function isBranchEngineer() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'Branch Engineer' || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'Branch Engineer')
+      );
+    }
+
+    // Helper function to verify assigned branch
+    function getAssignedBranch() {
+      return getUserData().branchId;
+    }
+
+    // --- USERS COLLECTION ---
+    match /users/{userId} {
+      // Authenticated users can read user profiles
+      allow read: if isAuthenticated();
+
+      // Allow creating user document if:
+      // 1. It is the user's own profile during initial signup/bootstrap (request.auth.uid == userId)
+      // 2. OR it is created by an authenticated Main Admin
+      allow create: if isAuthenticated() && (
+        request.auth.uid == userId || isMainAdmin()
+      );
+
+      // Only Main Admin can update roles or status
+      // Users can update their own profile details, but NOT their role or isActive status
+      allow update: if isAuthenticated() && (
+        isMainAdmin() || (
+          request.auth.uid == userId &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.isActive == resource.data.isActive
+        )
+      );
+
+      // Only Main Admin can delete
+      allow delete: if isMainAdmin();
+    }
+
+    // --- PRODUCTS & CATEGORIES ---
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isMainAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isMainAdmin();
+    }
+
+    // --- BRANCHES / SUBSTATIONS ---
+    match /branches/{branchId} {
+      allow read: if isAuthenticated();
+      allow write: if isMainAdmin();
+    }
+
+    // --- STOCK TRANSFERS & CHALLANS ---
+    match /transfers/{transferId} {
+      allow read: if isAuthenticated();
+      
+      // Main Admin can dispatch from any substation
+      // Branch Engineer can ONLY dispatch from their assigned substation!
+      allow create: if isMainAdmin() || (
+        isBranchEngineer() && 
+        request.resource.data.fromLocationId == getAssignedBranch()
+      );
+
+      // Main Admin or recipient branch can update status
+      allow update: if isAuthenticated();
+    }
+
+    // --- STOCK MOVEMENTS AUDIT LOG ---
+    match /movements/{movementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isMainAdmin();
+    }
+  }
+}
