@@ -2,7 +2,8 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  getAuth
 } from "firebase/auth";
 import { 
   doc, 
@@ -11,9 +12,12 @@ import {
   updateDoc, 
   collection, 
   getDocs, 
+  query,
+  where,
   serverTimestamp 
 } from "firebase/firestore";
-import { auth, db, isFirebaseConfigured } from "./firebase.js";
+import { initializeApp, getApps } from "firebase/app";
+import { auth, db, isFirebaseConfigured, getFirebaseConfig } from "./firebase.js";
 import { initialUsers } from "../mockData.js";
 
 const memoryStore = {};
@@ -109,31 +113,82 @@ export const authService = {
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
-          // If first-time admin bootstrap without Firestore doc, create it
-          const initialAdminProfile = {
+        const isMasterAdmin = cleanEmail === "admin@ccce.com.bd" || cleanEmail === "admin@voltflow.com";
+        let profile = userDoc.exists() ? userDoc.data() : null;
+
+        if (!profile) {
+          // If no doc under user.uid, check if admin pre-created it with this email
+          try {
+            const q = query(collection(db, "users"), where("email", "==", cleanEmail));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              profile = snap.docs[0].data();
+            }
+          } catch (e) {
+            console.warn("Firestore email query notice:", e);
+          }
+
+          // Also check local dev users
+          if (!profile) {
+            const localUsers = getLocalDevUsers();
+            const foundLocal = localUsers.find(u => u.email.toLowerCase() === cleanEmail);
+            if (foundLocal) {
+              profile = { ...foundLocal };
+            }
+          }
+
+          // Build strictly verified profile
+          const assignedRole = profile?.role 
+            ? profile.role 
+            : (isMasterAdmin ? "Main Admin" : "Branch Engineer");
+
+          const assignedBranch = profile?.branchId || (isMasterAdmin ? "loc_ccce_main" : "loc_gazaria_230");
+          const assignedBranchName = profile?.branchName || (isMasterAdmin ? "CCCE Central Main Branch" : "Gazaria 230 KV Substation");
+
+          profile = {
             uid: user.uid,
-            fullName: user.displayName || "Main Admin",
+            fullName: profile?.fullName || user.displayName || (isMasterAdmin ? "Main Admin" : "Branch Engineer"),
             email: cleanEmail,
-            phone: "+880 1711-234567",
-            role: "Main Admin",
-            branchId: "loc_gazaria_230",
-            branchName: "Gazaria 230 KV Substation",
-            department: "Grid Operations & Executive Central",
-            isActive: true,
+            phone: profile?.phone || "+880 1700-000000",
+            role: assignedRole,
+            branchId: assignedBranch,
+            branchName: assignedBranchName,
+            department: profile?.department || (isMasterAdmin ? "CCCE Central HQ & Executive Administration" : "Substation Field Operations"),
+            isActive: profile?.isActive !== false,
             createdAt: serverTimestamp()
           };
-          await setDoc(userDocRef, initialAdminProfile);
-          return { user, profile: initialAdminProfile };
-        }
 
-        const profile = userDoc.data();
+          await setDoc(userDocRef, profile);
+        } else {
+          // Profile exists: If this user is NOT master admin, but was mistakenly saved as Main Admin (old fallback bug),
+          // automatically correct them to Branch Engineer!
+          if (!isMasterAdmin && profile.role === "Main Admin") {
+            const correctedBranch = profile.branchId === "loc_ccce_main" ? "loc_gazaria_230" : (profile.branchId || "loc_gazaria_230");
+            profile.role = "Branch Engineer";
+            profile.branchId = correctedBranch;
+            try {
+              await updateDoc(userDocRef, {
+                role: "Branch Engineer",
+                branchId: correctedBranch
+              });
+            } catch (err) {
+              console.warn("Profile role correction notice:", err);
+            }
+          }
+        }
 
         // Check if account has been disabled
         if (profile.isActive === false) {
           await signOut(auth);
           throw new Error("Your account has been deactivated. Please contact your Main Administrator.");
         }
+
+        safeStorage.setItem("voltflow_current_auth_session", JSON.stringify({
+          uid: profile.uid,
+          email: profile.email,
+          profile
+        }));
+        safeStorage.setItem("voltflow_role", profile.role);
 
         return { user, profile };
       } catch (err) {
@@ -152,22 +207,27 @@ export const authService = {
     const foundUser = localUsers.find(u => u.email.toLowerCase() === cleanEmail && u.password === password);
 
     if (!foundUser) {
-      throw new Error("Invalid email or password. (Demo: admin@voltflow.com / admin123)");
+      throw new Error("Invalid email or password. Please verify your credentials.");
     }
 
     if (!foundUser.isActive) {
       throw new Error("Your account has been deactivated. Please contact your Main Administrator.");
     }
 
-    // Return authenticated mock profile
-    const profile = { ...foundUser };
+    // Return authenticated mock profile with strictly enforced role
+    const isMasterAdmin = cleanEmail === "admin@ccce.com.bd" || cleanEmail === "admin@voltflow.com";
+    const profile = { 
+      ...foundUser,
+      role: isMasterAdmin ? "Main Admin" : (foundUser.role || "Branch Engineer")
+    };
     delete profile.password;
 
-    localStorage.setItem("voltflow_current_auth_session", JSON.stringify({
+    safeStorage.setItem("voltflow_current_auth_session", JSON.stringify({
       uid: profile.uid,
       email: profile.email,
       profile
     }));
+    safeStorage.setItem("voltflow_role", profile.role);
 
     return {
       user: { uid: profile.uid, email: profile.email, displayName: profile.fullName },
@@ -226,8 +286,7 @@ export const authService = {
       throw new Error("Security violation: Only Main Admin can manage administrative roles.");
     }
 
-    const assignedRole = newUserData.role === "Main Admin" ? "Main Admin" : "Branch Engineer";
-
+    const assignedRole = "Branch Engineer";
     const cleanEmail = newUserData.email.trim().toLowerCase();
     const tempPassword = newUserData.password || "VoltFlow@2026";
 
@@ -244,17 +303,32 @@ export const authService = {
       createdAt: new Date().toISOString()
     };
 
+    let createdUid = `usr_${Date.now()}`;
+
+    // Provision user in Firebase Authentication using secondary client app if online
+    if (isFirebaseConfigured) {
+      try {
+        const config = getFirebaseConfig();
+        if (config) {
+          const secondaryApp = getApps().find(a => a.name === "SecondaryAuthApp") || initializeApp(config, "SecondaryAuthApp");
+          const secondaryAuth = getAuth(secondaryApp);
+          const cred = await createUserWithEmailAndPassword(secondaryAuth, cleanEmail, tempPassword);
+          createdUid = cred.user.uid;
+          await signOut(secondaryAuth);
+        }
+      } catch (authErr) {
+        console.warn("Secondary Auth notice:", authErr.message);
+      }
+    }
+
+    userPayload.uid = createdUid;
+
     if (isFirebaseConfigured && db) {
       try {
-        // In real backend/Firebase Admin SDK, admin creates user via Admin SDK.
-        // On client-side, we write the user document to Firestore 'users' collection.
-        const newUid = `usr_${Date.now()}`;
-        userPayload.uid = newUid;
-        await setDoc(doc(db, "users", newUid), {
+        await setDoc(doc(db, "users", createdUid), {
           ...userPayload,
           createdAt: serverTimestamp()
         });
-        return userPayload;
       } catch (err) {
         console.error("Firestore user creation error:", err);
       }
@@ -262,15 +336,16 @@ export const authService = {
 
     // Local development storage update
     const localUsers = getLocalDevUsers();
-    const newUid = `usr_${Date.now()}`;
+    const filtered = localUsers.filter(u => u.email.toLowerCase() !== cleanEmail);
     const createdUser = {
-      uid: newUid,
+      uid: createdUid,
       ...userPayload,
+      role: "Branch Engineer",
       password: tempPassword
     };
 
-    localUsers.push(createdUser);
-    safeStorage.setItem("voltflow_auth_users", JSON.stringify(localUsers));
+    filtered.push(createdUser);
+    safeStorage.setItem("voltflow_auth_users", JSON.stringify(filtered));
     return createdUser;
   },
 

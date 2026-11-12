@@ -28,14 +28,16 @@ export const AuthProvider = ({ children }) => {
               setAuthError("Your account has been deactivated. Please contact your Main Administrator.");
             } else {
               setCurrentUser(firebaseUser);
-              setUserProfile(profile || {
+              const cleanProfile = profile || {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
                 fullName: firebaseUser.displayName || "Authenticated Staff",
                 role: "Branch Engineer",
                 branchId: "loc_gazaria_230",
                 isActive: true
-              });
+              };
+              setUserProfile(cleanProfile);
+              localStorage.setItem("voltflow_role", cleanProfile.role);
               setAuthError(null);
             }
           } catch (err) {
