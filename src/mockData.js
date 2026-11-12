@@ -3,16 +3,33 @@
 
 export const initialBranches = [
   {
+    id: "loc_ccce_main",
+    name: "CCCE Central Main Branch",
+    code: "CCCE-HQ",
+    type: "CCCE Central Headquarters & Master Warehouse",
+    location: "Tejgaon I/A, Dhaka",
+    address: "CCCE Central Industrial Complex, Plot 14/A, Tejgaon, Dhaka-1208",
+    inCharge: "Engr. Rafiqul Islam (Chief Admin)",
+    phone: "+880 1711-000001",
+    email: "admin.hq@ccce.com.bd",
+    isMain: true,
+    isSubBranch: false,
+    status: "Active",
+    capacity: "125,000 sq ft",
+    established: "2015"
+  },
+  {
     id: "loc_gazaria_230",
     name: "Gazaria 230 KV Substation",
     code: "SS-GZR-230",
-    type: "230 KV Grid Substation & Central Depot",
+    type: "230 KV Grid Substation & Regional Depot",
     location: "Gazaria, Munshiganj",
     address: "Near Meghna Bridge, Gazaria Industrial Corridor, Munshiganj",
-    inCharge: "Engr. Rafiqul Islam",
+    inCharge: "Engr. Monirul Islam",
     phone: "+880 1711-234567",
-    email: "rafiqul.gazaria@voltflow.com",
-    isMain: true,
+    email: "monirul.gazaria@voltflow.com",
+    isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "55,000 sq ft",
     established: "2018"
@@ -28,6 +45,7 @@ export const initialBranches = [
     phone: "+880 1912-345678",
     email: "sajjad.kobirpur@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "42,000 sq ft",
     established: "2019"
@@ -43,6 +61,7 @@ export const initialBranches = [
     phone: "+880 1819-876543",
     email: "tanvir.kaliakoir@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "38,000 sq ft",
     established: "2020"
@@ -58,6 +77,7 @@ export const initialBranches = [
     phone: "+880 1718-445566",
     email: "mizan.dhamrai@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "35,000 sq ft",
     established: "2021"
@@ -73,6 +93,7 @@ export const initialBranches = [
     phone: "+880 1788-991122",
     email: "farhana.tangail@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "36,000 sq ft",
     established: "2022"
@@ -88,6 +109,7 @@ export const initialBranches = [
     phone: "+880 1715-443322",
     email: "kawsar.aricha@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "24,000 sq ft",
     established: "2017"
@@ -103,6 +125,7 @@ export const initialBranches = [
     phone: "+880 1611-998877",
     email: "mahmud.mirpur132@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "22,000 sq ft",
     established: "2019"
@@ -118,6 +141,7 @@ export const initialBranches = [
     phone: "+880 1712-334455",
     email: "zahir.tongi@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "26,000 sq ft",
     established: "2016"
@@ -133,6 +157,7 @@ export const initialBranches = [
     phone: "+880 1913-778899",
     email: "asif.basundhara@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "20,000 sq ft",
     established: "2023"
@@ -148,6 +173,7 @@ export const initialBranches = [
     phone: "+880 1814-556677",
     email: "tariq.mirpur33@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "14,000 sq ft",
     established: "2021"
@@ -163,6 +189,7 @@ export const initialBranches = [
     phone: "+880 1719-223344",
     email: "naimul.purbachol@voltflow.com",
     isMain: false,
+    isSubBranch: true,
     status: "Active",
     capacity: "16,000 sq ft",
     established: "2024"
@@ -257,6 +284,7 @@ export const initialProducts = [
     unitPrice: 62.50,
     specs: "BDS 901, 450/750V, Annealed Copper Conductor, PVC Insulated Grade A",
     stock: {
+      loc_ccce_main: 15000,
       loc_gazaria_230: 8500,
       loc_kobirpur_230: 1200,
       loc_kaliakoir_230: 1500,
@@ -285,6 +313,7 @@ export const initialProducts = [
     unitPrice: 485.00,
     specs: "600/1000V, Heavy Duty Steel Wire Armored, XLPE Insulation",
     stock: {
+      loc_ccce_main: 3200,
       loc_gazaria_230: 1450,
       loc_kobirpur_230: 280,
       loc_kaliakoir_230: 320,
@@ -313,6 +342,7 @@ export const initialProducts = [
     unitPrice: 19800.00,
     specs: "TMD Trip Unit 250A, Icu=36kA at 415V, 3-Pole 3D",
     stock: {
+      loc_ccce_main: 65,
       loc_gazaria_230: 32,
       loc_kobirpur_230: 6,
       loc_kaliakoir_230: 5,
@@ -341,6 +371,7 @@ export const initialProducts = [
     unitPrice: 1750.00,
     specs: "S203-C63, 10kA Breaking Capacity, DIN Rail Mounted",
     stock: {
+      loc_ccce_main: 350,
       loc_gazaria_230: 220,
       loc_kobirpur_230: 45,
       loc_kaliakoir_230: 50,
@@ -369,6 +400,7 @@ export const initialProducts = [
     unitPrice: 1050.00,
     specs: "1.5mm Thickness, Hot-dip Galvanized Sheet (60 Micron), with Joiner plates",
     stock: {
+      loc_ccce_main: 280,
       loc_gazaria_230: 190,
       loc_kobirpur_230: 35,
       loc_kaliakoir_230: 40,
@@ -397,6 +429,7 @@ export const initialProducts = [
     unitPrice: 1350.00,
     specs: "Class 4 Heavy Duty, Impact & UV Resistant, 3-meter each length",
     stock: {
+      loc_ccce_main: 450,
       loc_gazaria_230: 310,
       loc_kobirpur_230: 65,
       loc_kaliakoir_230: 70,
@@ -425,6 +458,7 @@ export const initialProducts = [
     unitPrice: 12400.00,
     specs: "16-Way 3-Phase, 1.6mm Cold Rolled Sheet, Electrostatic Epoxy Powder Coated",
     stock: {
+      loc_ccce_main: 30,
       loc_gazaria_230: 18,
       loc_kobirpur_230: 3,
       loc_kaliakoir_230: 4,
@@ -453,6 +487,7 @@ export const initialProducts = [
     unitPrice: 4600.00,
     specs: "Die-cast Aluminum, 6500K Cool Daylight, 140 lm/W, 10kV Surge Protection",
     stock: {
+      loc_ccce_main: 95,
       loc_gazaria_230: 55,
       loc_kobirpur_230: 14,
       loc_kaliakoir_230: 18,
@@ -481,6 +516,7 @@ export const initialProducts = [
     unitPrice: 3100.00,
     specs: "UL 467 Listed, 99.9% Molecularly Bonded Copper Coating 254 Microns",
     stock: {
+      loc_ccce_main: 150,
       loc_gazaria_230: 95,
       loc_kobirpur_230: 18,
       loc_kaliakoir_230: 22,
@@ -509,6 +545,7 @@ export const initialProducts = [
     unitPrice: 980000.00,
     specs: "ONAN Cooling, Dyn11 Vector Group, Off-Circuit Tap Changer (+/- 2.5%, 5%)",
     stock: {
+      loc_ccce_main: 8,
       loc_gazaria_230: 4,
       loc_kobirpur_230: 1,
       loc_kaliakoir_230: 1,
@@ -537,6 +574,7 @@ export const initialProducts = [
     unitPrice: 420000.00,
     specs: "4 MPPTs, 98.7% Max Efficiency, AFCI Arc Fault Circuit Interrupter",
     stock: {
+      loc_ccce_main: 12,
       loc_gazaria_230: 6,
       loc_kobirpur_230: 1,
       loc_kaliakoir_230: 2,
@@ -565,6 +603,7 @@ export const initialProducts = [
     unitPrice: 850.00,
     specs: "Weatherproof IP66 / IK08, Surface Mounting, Locking Cap",
     stock: {
+      loc_ccce_main: 220,
       loc_gazaria_230: 140,
       loc_kobirpur_230: 28,
       loc_kaliakoir_230: 30,
@@ -588,17 +627,17 @@ export const initialTransfers = [
     id: "trf_001",
     challanNo: "CH-2026-0182",
     date: "2026-11-06T14:30:00.000Z",
-    fromLocationId: "loc_gazaria_230",
-    fromLocationName: "Gazaria 230 KV Substation",
-    toLocationId: "loc_kobirpur_230",
-    toLocationName: "Kobirpur 230 KV Substation",
+    fromLocationId: "loc_ccce_main",
+    fromLocationName: "CCCE Central Main Branch",
+    toLocationId: "loc_gazaria_230",
+    toLocationName: "Gazaria 230 KV Substation",
     status: "in_transit",
     vehicleNo: "Dhaka Metro TA-14-8890",
     driverName: "Abul Kashem",
     driverPhone: "+880 1722-114477",
-    dispatchedBy: "Engr. Rafiqul Islam",
+    dispatchedBy: "Engr. Rafiqul Islam (CCCE Admin)",
     receivedBy: "Pending Delivery",
-    notes: "Urgent dispatch for 230kV switchyard busbar extension.",
+    notes: "Central CCCE distribution to Gazaria substation depot.",
     items: [
       {
         productId: "prod_1",
@@ -895,15 +934,15 @@ export const initialUsers = [
   {
     id: "usr_1",
     name: "Engr. Rafiqul Islam",
-    email: "rafiqul.admin@voltflow.com",
+    email: "admin@ccce.com.bd",
     role: "Main Admin",
-    branchId: "loc_gazaria_230",
-    branchName: "Gazaria 230 KV Substation",
-    phone: "+880 1711-234567",
+    branchId: "loc_ccce_main",
+    branchName: "CCCE Central Main Branch",
+    phone: "+880 1711-000001",
     status: "Active",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80",
-    joinedDate: "2020-03-15",
-    department: "Grid Operations & Executive Central"
+    joinedDate: "2015-06-01",
+    department: "CCCE Central HQ & Executive Directorate"
   },
   {
     id: "usr_2",

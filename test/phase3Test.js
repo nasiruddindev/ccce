@@ -194,7 +194,7 @@ async function runPhase3Tests() {
 
   // Test 3.4: Main Hub cannot be deactivated
   try {
-    await branchService.toggleBranchStatus(mockAdmin, "loc_gazaria_230", "Inactive");
+    await branchService.toggleBranchStatus(mockAdmin, "loc_ccce_main", "Inactive");
     assert(false, "Central Hub was deactivated (Should be protected)");
   } catch (err) {
     assert(

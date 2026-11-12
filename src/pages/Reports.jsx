@@ -620,10 +620,10 @@ export default function Reports() {
               }}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
-              <option value="all">Branch: All 11 Substations</option>
+              <option value="all">Branch: All Locations ({branches.length})</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.code} - {b.name}
+                  {b.isMain ? `🏢 [MAIN] ${b.code} - ${b.name}` : `⚡ [SUB] ${b.code} - ${b.name}`}
                 </option>
               ))}
             </select>

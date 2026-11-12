@@ -59,6 +59,8 @@ export default function AllBranches() {
     capacity: ""
   });
 
+  const [typeFilter, setTypeFilter] = useState("all");
+
   const filteredBranches = branches.filter((b) => {
     const matchesSearch =
       (b.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,8 +69,12 @@ export default function AllBranches() {
       (b.inCharge || b.contactPerson || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || (b.status || "Active") === statusFilter;
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "main" && b.isMain) ||
+      (typeFilter === "sub" && !b.isMain);
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   // Handle Add Branch
@@ -287,7 +293,17 @@ export default function AllBranches() {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            <option value="all">All Types ({branches.length})</option>
+            <option value="main">🏢 CCCE Main Branch</option>
+            <option value="sub">⚡ Sub Branches (11 Substations)</option>
+          </select>
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -310,7 +326,7 @@ export default function AllBranches() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4">Branch Name</th>
+                <th className="py-3.5 px-4">Branch Name & Type</th>
                 <th className="py-3.5 px-4">Branch Code</th>
                 <th className="py-3.5 px-4">Location</th>
                 <th className="py-3.5 px-4 text-right">Total Products</th>
@@ -353,12 +369,23 @@ export default function AllBranches() {
                             <Building2 className="w-4 h-4" />
                           </div>
                           <div>
-                            <Link
-                              to={`/branches/${branch.id}`}
-                              className="font-bold text-slate-900 hover:text-blue-600 transition block truncate"
-                            >
-                              {branch.name}
-                            </Link>
+                            <div className="flex items-center gap-2">
+                              <Link
+                                to={`/branches/${branch.id}`}
+                                className="font-bold text-slate-900 hover:text-blue-600 transition block truncate"
+                              >
+                                {branch.name}
+                              </Link>
+                              {branch.isMain ? (
+                                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 tracking-wide">
+                                  🏢 MAIN BRANCH
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 tracking-wide">
+                                  ⚡ SUB BRANCH
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[11px] text-slate-400">
                               Lead: {branch.inCharge || branch.contactPerson || "Lead Station Engineer"}
                             </span>

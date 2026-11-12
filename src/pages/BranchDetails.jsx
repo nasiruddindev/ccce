@@ -119,9 +119,13 @@ export default function BranchDetails() {
                 <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                   {branch.type || "Substation Site Store"}
                 </span>
-                {branch.isMain && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                    Central Distribution Hub
+                {branch.isMain ? (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                    🏢 CCCE Central Main Branch
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                    ⚡ Sub Branch (Grid Substation)
                   </span>
                 )}
                 <Badge variant={branch.status === "Active" || !branch.status ? "success" : "neutral"} size="sm">

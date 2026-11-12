@@ -12,62 +12,62 @@ import {
 const InventoryContext = createContext();
 
 export const InventoryProvider = ({ children }) => {
-  // 1. Core State with v2 key to ensure 11 substations are instantly loaded
+  // 1. Core State with v3 key to ensure CCCE Main Branch and 11 sub branches are loaded
   const [branches, setBranches] = useState(() => {
-    const saved = localStorage.getItem("voltflow_branches_v2");
+    const saved = localStorage.getItem("voltflow_branches_v3");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.some(b => b.id === "loc_gazaria_230")) return parsed;
+        if (parsed.some(b => b.id === "loc_ccce_main")) return parsed;
       } catch (e) {}
     }
     return initialBranches;
   });
 
   const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem("voltflow_products_v2");
+    const saved = localStorage.getItem("voltflow_products_v3");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.some(p => p.stock && p.stock.loc_gazaria_230 !== undefined)) return parsed;
+        if (parsed.some(p => p.stock && p.stock.loc_ccce_main !== undefined)) return parsed;
       } catch (e) {}
     }
     return initialProducts;
   });
 
   const [categories, setCategories] = useState(() => {
-    const saved = localStorage.getItem("voltflow_categories_v2");
+    const saved = localStorage.getItem("voltflow_categories_v3");
     return saved ? JSON.parse(saved) : initialCategories;
   });
 
   const [transfers, setTransfers] = useState(() => {
-    const saved = localStorage.getItem("voltflow_transfers_v2");
+    const saved = localStorage.getItem("voltflow_transfers_v3");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.some(t => t.fromLocationId === "loc_gazaria_230")) return parsed;
+        if (parsed.some(t => t.fromLocationId === "loc_ccce_main")) return parsed;
       } catch (e) {}
     }
     return initialTransfers;
   });
 
   const [movements, setMovements] = useState(() => {
-    const saved = localStorage.getItem("voltflow_movements_v2");
+    const saved = localStorage.getItem("voltflow_movements_v3");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.some(m => m.sourceBranch?.includes("Gazaria"))) return parsed;
+        if (parsed.length > 0) return parsed;
       } catch (e) {}
     }
     return initialMovements;
   });
 
   const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem("voltflow_users_v2");
+    const saved = localStorage.getItem("voltflow_users_v3");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.some(u => u.branchId === "loc_gazaria_230")) return parsed;
+        if (parsed.some(u => u.branchId === "loc_ccce_main")) return parsed;
       } catch (e) {}
     }
     return initialUsers;
@@ -92,29 +92,29 @@ export const InventoryProvider = ({ children }) => {
   // Global search term
   const [globalSearch, setGlobalSearch] = useState("");
 
-  // Persist state updates to localStorage v2
+  // Persist state updates to localStorage v3
   useEffect(() => {
-    localStorage.setItem("voltflow_branches_v2", JSON.stringify(branches));
+    localStorage.setItem("voltflow_branches_v3", JSON.stringify(branches));
   }, [branches]);
 
   useEffect(() => {
-    localStorage.setItem("voltflow_products_v2", JSON.stringify(products));
+    localStorage.setItem("voltflow_products_v3", JSON.stringify(products));
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem("voltflow_categories_v2", JSON.stringify(categories));
+    localStorage.setItem("voltflow_categories_v3", JSON.stringify(categories));
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem("voltflow_transfers_v2", JSON.stringify(transfers));
+    localStorage.setItem("voltflow_transfers_v3", JSON.stringify(transfers));
   }, [transfers]);
 
   useEffect(() => {
-    localStorage.setItem("voltflow_movements_v2", JSON.stringify(movements));
+    localStorage.setItem("voltflow_movements_v3", JSON.stringify(movements));
   }, [movements]);
 
   useEffect(() => {
-    localStorage.setItem("voltflow_users_v2", JSON.stringify(users));
+    localStorage.setItem("voltflow_users_v3", JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
@@ -372,6 +372,12 @@ export const InventoryProvider = ({ children }) => {
     localStorage.removeItem("voltflow_transfers_v2");
     localStorage.removeItem("voltflow_movements_v2");
     localStorage.removeItem("voltflow_users_v2");
+    localStorage.removeItem("voltflow_branches_v3");
+    localStorage.removeItem("voltflow_products_v3");
+    localStorage.removeItem("voltflow_categories_v3");
+    localStorage.removeItem("voltflow_transfers_v3");
+    localStorage.removeItem("voltflow_movements_v3");
+    localStorage.removeItem("voltflow_users_v3");
     setBranches(initialBranches);
     setProducts(initialProducts);
     setCategories(initialCategories);

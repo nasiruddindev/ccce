@@ -71,12 +71,12 @@ export const AuthProvider = ({ children }) => {
         const defaults = [
           {
             uid: "usr_admin_001",
-            email: "admin@voltflow.com",
+            email: "admin@ccce.com.bd",
             fullName: "Engr. Rafiqul Islam",
             role: "Main Admin",
-            branchId: "loc_gazaria_230",
-            branchName: "Gazaria 230 KV Substation",
-            department: "Grid Operations & Executive Central",
+            branchId: "loc_ccce_main",
+            branchName: "CCCE Central Main Branch",
+            department: "CCCE Central HQ & Executive Directorate",
             isActive: true
           }
         ];

@@ -38,9 +38,9 @@ const getLocalDevUsers = () => {
       fullName: "Engr. Rafiqul Islam",
       phone: "+880 1711-234567",
       role: "Main Admin",
-      branchId: "loc_gazaria_230",
-      branchName: "Gazaria 230 KV Substation",
-      department: "Grid Operations & Central Administration",
+      branchId: "loc_ccce_main",
+      branchName: "CCCE Central Main Branch",
+      department: "CCCE Central HQ & Executive Administration",
       isActive: true,
       createdAt: new Date().toISOString()
     },

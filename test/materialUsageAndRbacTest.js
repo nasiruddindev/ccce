@@ -6,9 +6,10 @@ console.log("🧪 RUNNING SUITE: Material Usage ('In Use This Branch') & RBAC Te
 console.log("================================================================\n");
 
 const mockBranches = [
-  { id: "loc_gazaria_230", name: "Gazaria 230 KV Substation", code: "GZR-230", status: "Active", isMain: true },
-  { id: "loc_megnaghat_400", name: "Megnaghat 400 KV Substation", code: "MGN-400", status: "Active" },
-  { id: "loc_bhulta_132", name: "Bhulta 132 KV Substation", code: "BLT-132", status: "Active" }
+  { id: "loc_ccce_main", name: "CCCE Central Main Branch", code: "CCCE-HQ", status: "Active", isMain: true },
+  { id: "loc_gazaria_230", name: "Gazaria 230 KV Substation", code: "GZR-230", status: "Active", isMain: false, isSubBranch: true },
+  { id: "loc_megnaghat_400", name: "Megnaghat 400 KV Substation", code: "MGN-400", status: "Active", isMain: false, isSubBranch: true },
+  { id: "loc_bhulta_132", name: "Bhulta 132 KV Substation", code: "BLT-132", status: "Active", isMain: false, isSubBranch: true }
 ];
 
 const mockProducts = [
@@ -19,6 +20,7 @@ const mockProducts = [
     unit: "Meters",
     status: "Active",
     stock: {
+      loc_ccce_main: 1500,
       loc_gazaria_230: 250,
       loc_megnaghat_400: 80,
       loc_bhulta_132: 20
@@ -31,6 +33,7 @@ const mockProducts = [
     unit: "Units",
     status: "Active",
     stock: {
+      loc_ccce_main: 50,
       loc_gazaria_230: 15,
       loc_megnaghat_400: 4,
       loc_bhulta_132: 0
@@ -42,7 +45,7 @@ const mainAdminUser = {
   uid: "usr_admin_001",
   fullName: "Engr. Rafiqul Islam",
   role: "Main Admin",
-  branchId: "loc_gazaria_230",
+  branchId: "loc_ccce_main",
   isActive: true
 };
 

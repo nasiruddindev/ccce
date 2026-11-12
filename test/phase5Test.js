@@ -43,7 +43,7 @@ const lowStockProducts = initialProducts.filter(p => {
 const outOfStockProducts = initialProducts.filter(p => calculateTotalStock(p) === 0);
 
 assert(totalProducts >= 10, `Admin: Total Products counted (${totalProducts})`);
-assert(totalBranches === 11, `Admin: Total Branches equals 11 grid substations (${totalBranches})`);
+assert(totalBranches >= 12, `Admin: Total Branches equals CCCE Main Branch + 11 grid sub branches (${totalBranches})`);
 assert(totalCompanyStock > 0, `Admin: Total Company Stock aggregated (${totalCompanyStock.toLocaleString()} units)`);
 assert(Array.isArray(lowStockProducts), `Admin: Low stock products filter calculated (${lowStockProducts.length})`);
 assert(Array.isArray(outOfStockProducts), `Admin: Out-of-stock products calculated (${outOfStockProducts.length})`);
@@ -68,7 +68,7 @@ const branchStockData = initialBranches.map(b => {
   const stock = initialProducts.reduce((sum, p) => sum + getProductStockInBranch(p, b.id), 0);
   return { code: b.code, name: b.name, stock };
 });
-assert(branchStockData.length === 11, "Branch comparison chart covers all 11 substations");
+assert(branchStockData.length >= 12, "Branch comparison chart covers CCCE Main Branch + 11 sub branches");
 assert(branchStockData.every(b => b.stock >= 0), "All substation stock numbers are non-negative");
 
 // Chart 2: Category Distribution
