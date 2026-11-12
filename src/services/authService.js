@@ -33,8 +33,21 @@ const getLocalDevUsers = () => {
   const defaults = [
     {
       uid: "usr_admin_001",
+      email: "admin@ccce.com.bd",
+      password: "admin123",
+      fullName: "Engr. Rafiqul Islam",
+      phone: "+880 1711-234567",
+      role: "Main Admin",
+      branchId: "loc_ccce_main",
+      branchName: "CCCE Central Main Branch",
+      department: "CCCE Central HQ & Executive Administration",
+      isActive: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      uid: "usr_admin_002",
       email: "admin@voltflow.com",
-      password: "admin123", // For development testing
+      password: "admin123",
       fullName: "Engr. Rafiqul Islam",
       phone: "+880 1711-234567",
       role: "Main Admin",
