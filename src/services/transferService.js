@@ -310,5 +310,100 @@ export const transferService = {
       },
       movement: adjustmentMovement
     };
+  },
+
+  /**
+   * Secure Material Usage Recording ("In Use This Branch" / কাজে ব্যবহার)
+   * Main Admin can record usage for ANY substation branch.
+   * Branch Engineers can ONLY record usage for their own assigned substation.
+   */
+  async recordMaterialUsage(userProfile, { productId, branchId, quantity, taskDescription }, allProducts, allBranches) {
+    // 1. Authenticated User Verification
+    if (!userProfile || !userProfile.role) {
+      throw new Error("Authentication Required: You must be signed in to record material usage.");
+    }
+
+    if (userProfile.isActive === false) {
+      throw new Error("Account Disabled: Your account has been suspended by an administrator.");
+    }
+
+    // 2. Strict Role-Based Scope Enforcement
+    if (userProfile.role === "Branch Engineer") {
+      const assignedBranch = userProfile.branchId;
+      if (!assignedBranch || branchId !== assignedBranch) {
+        throw new Error(
+          `Security Exception: Unauthorized substation. As a Branch Engineer, you are strictly restricted to recording material usage solely for your assigned substation (${userProfile.branchName || userProfile.branchId}).`
+        );
+      }
+    }
+
+    // 3. Validation
+    if (!productId || !branchId) {
+      throw new Error("Validation Error: Product and substation branch are required.");
+    }
+
+    const numQty = Number(quantity);
+    if (!numQty || numQty <= 0 || !Number.isInteger(numQty)) {
+      throw new Error("Invalid Quantity: Consumed quantity must be a positive integer.");
+    }
+
+    const branch = allBranches.find((b) => (b.id || b.branchId) === branchId);
+    if (!branch || branch.status === "Inactive") {
+      throw new Error("Invalid Operation: Selected substation branch is invalid or inactive.");
+    }
+
+    const prod = allProducts.find((p) => (p.id || p.productId) === productId);
+    if (!prod) {
+      throw new Error("Item Not Found: Product does not exist in catalog.");
+    }
+
+    if (prod.status === "Archived") {
+      throw new Error("Catalog Error: Product is archived and cannot be issued or consumed.");
+    }
+
+    // 4. Stock Availability Check
+    const currentStock = Number(prod.stock?.[branchId]) || 0;
+    if (currentStock < numQty) {
+      throw new Error(
+        `Insufficient Stock: '${prod.name || prod.productName}' has only ${currentStock} ${prod.unit} available at ${branch.name || branch.branchName}. Requested usage is ${numQty} ${prod.unit}.`
+      );
+    }
+
+    // 5. Atomic Stock Deduction
+    const updatedStock = { ...(prod.stock || {}) };
+    updatedStock[branchId] = currentStock - numQty;
+
+    const refNo = `USE-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const reasonText = taskDescription?.trim() || "In Use This Branch - Substation maintenance & installation";
+
+    // 6. Generate Append-Only Audit Trail Movement
+    const usageMovement = {
+      id: `mov_use_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      date: new Date().toISOString(),
+      type: "In Use (This Branch)",
+      productId: prod.id || prod.productId,
+      productName: prod.name || prod.productName,
+      sku: prod.sku,
+      sourceBranch: branch.name || branch.branchName,
+      destinationBranch: "Internal Substation Task (In Use This Branch)",
+      quantity: -numQty,
+      unit: prod.unit,
+      referenceNo: refNo,
+      reason: reasonText,
+      performedBy: userProfile.fullName || userProfile.name || "Station Engineer",
+      performedByUid: userProfile.uid,
+      status: "In Use (This Branch)",
+      immutable: true
+    };
+
+    return {
+      success: true,
+      referenceNo: refNo,
+      updatedProduct: {
+        ...prod,
+        stock: updatedStock
+      },
+      movement: usageMovement
+    };
   }
 };

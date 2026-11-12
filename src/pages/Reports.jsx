@@ -681,6 +681,7 @@ export default function Reports() {
               <option value="Procurement Inflow">Procurement Inflow</option>
               <option value="Transfer Out">Transfer Out</option>
               <option value="Transfer In">Transfer In</option>
+              <option value="In Use (This Branch)">In Use (This Branch)</option>
               <option value="Site Consumption">Site Consumption</option>
               <option value="Stock Adjustment">Stock Adjustment</option>
             </select>

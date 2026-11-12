@@ -265,6 +265,68 @@ export const InventoryProvider = ({ children }) => {
     );
   };
 
+  // Record Material Usage ("In Use This Branch" / কাজে ব্যবহার)
+  const recordMaterialUsage = ({ productId, branchId, quantity, taskDescription, user }) => {
+    const numQty = Number(quantity);
+    if (!numQty || numQty <= 0) {
+      throw new Error("Invalid quantity: Must be greater than 0.");
+    }
+
+    const prod = products.find(p => (p.id || p.productId) === productId);
+    if (!prod) {
+      throw new Error("Product not found.");
+    }
+
+    const currentBranchStock = Number(prod.stock?.[branchId]) || 0;
+    if (currentBranchStock < numQty) {
+      throw new Error(`Insufficient stock! Available in this branch: ${currentBranchStock} ${prod.unit}.`);
+    }
+
+    const branch = branches.find(b => (b.id || b.branchId) === branchId);
+    const branchName = branch?.name || branchId;
+
+    // Atomic Stock Deduction
+    setProducts(prevProducts =>
+      prevProducts.map(p => {
+        if ((p.id || p.productId) === productId) {
+          const prevStock = Number(p.stock?.[branchId]) || 0;
+          return {
+            ...p,
+            stock: {
+              ...p.stock,
+              [branchId]: Math.max(0, prevStock - numQty)
+            }
+          };
+        }
+        return p;
+      })
+    );
+
+    const refNo = `USE-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const reasonText = taskDescription?.trim() || "In Use This Branch - Substation maintenance & installation";
+    const performer = user?.fullName || user?.name || currentUser?.fullName || currentUser?.name || "Station Engineer";
+
+    const newMovement = {
+      id: `mov_use_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      date: new Date().toISOString(),
+      type: "In Use (This Branch)",
+      productId: prod.id,
+      productName: prod.name,
+      sku: prod.sku,
+      sourceBranch: branchName,
+      destinationBranch: "Internal Substation Task (In Use This Branch)",
+      quantity: -numQty,
+      unit: prod.unit,
+      referenceNo: refNo,
+      reason: reasonText,
+      performedBy: performer,
+      status: "In Use (This Branch)"
+    };
+
+    setMovements(prev => [newMovement, ...prev]);
+    return { success: true, referenceNo: refNo, movement: newMovement };
+  };
+
   // Add Product
   const addProduct = (newProduct) => {
     const prodWithId = {
@@ -344,6 +406,7 @@ export const InventoryProvider = ({ children }) => {
         lowStockCount,
         createTransfer,
         markTransferReceived,
+        recordMaterialUsage,
         addProduct,
         addBranch,
         addUser,
