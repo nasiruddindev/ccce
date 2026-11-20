@@ -36,27 +36,20 @@ async function runTestSuite() {
     assert(err.message.includes("Invalid email or password"), "Invalid credentials rejected with proper error message");
   }
 
-  // 2. Disabled Account Access
+  // 2. Admin Login
+  let adminProfile;
   try {
-    await authService.login("disabled.user@voltflow.com", "user123");
-    assert(false, "Disabled user should not be able to log in");
+    const { user, profile } = await authService.login("admin@ccce.com.bd", "admin123");
+    adminProfile = profile;
+    assert(user && profile.role === "Main Admin", "Admin login succeeds with role 'Main Admin'");
   } catch (err) {
-    assert(err.message.includes("deactivated"), "Disabled account blocked with deactivation message");
+    assert(false, `Admin login failed: ${err.message}`);
   }
 
-  // 3. Engineer Login
+  // 3. Role Restriction: Engineer cannot create accounts
   try {
-    const { user, profile } = await authService.login("engineer.tanvir@voltflow.com", "eng123");
-    assert(user && profile.role === "Branch Engineer", "Engineer login succeeds with role 'Branch Engineer'");
-    assert(profile.branchId === "loc_kaliakoir_230", "Engineer has verified assigned branch: Kaliakoir 230 KV");
-  } catch (err) {
-    assert(false, `Engineer login failed: ${err.message}`);
-  }
-
-  // 4. Role Restriction: Engineer cannot create accounts
-  try {
-    const engineerProfile = { role: "Branch Engineer", uid: "eng_test" };
-    await authService.createEngineerAccount(engineerProfile, {
+    const fakeEngineerProfile = { role: "Branch Engineer", uid: "eng_test" };
+    await authService.createEngineerAccount(fakeEngineerProfile, {
       fullName: "Hacked Admin",
       email: "hacked@voltflow.com",
       role: "Main Admin",
@@ -67,31 +60,49 @@ async function runTestSuite() {
     assert(err.message.includes("Unauthorized"), "Engineer account creation blocked: only Main Admin authorized");
   }
 
-  // 5. Admin Login
-  let adminProfile;
+  // 4. Admin provisions new Engineer account
+  let newEngineer;
   try {
-    const { user, profile } = await authService.login("admin@voltflow.com", "admin123");
-    adminProfile = profile;
-    assert(user && profile.role === "Main Admin", "Admin login succeeds with role 'Main Admin'");
-  } catch (err) {
-    assert(false, `Admin login failed: ${err.message}`);
-  }
-
-  // 6. Admin Account Creation for new Engineer with assigned branch
-  try {
-    const newEngineer = await authService.createEngineerAccount(adminProfile, {
-      fullName: "Engr. Mahmudul Hasan",
-      email: "mahmud.mirpur@voltflow.com",
-      password: "securePass123",
+    newEngineer = await authService.createEngineerAccount(adminProfile, {
+      fullName: "Engr. Tanvir Ahmed",
+      email: "engineer.tanvir.test@ccce.com.bd",
+      password: "eng123Password",
       role: "Branch Engineer",
-      branchId: "loc_mirpur_132",
-      branchName: "Mirpur 132 KV Substation",
-      department: "Metropolitan Grid Division"
+      branchId: "loc_kaliakoir_230",
+      branchName: "Kaliakoir 230 KV Substation",
+      department: "Substation Protection & Testing"
     });
     assert(newEngineer && newEngineer.role === "Branch Engineer", "Admin successfully created new engineer account");
-    assert(newEngineer.branchId === "loc_mirpur_132", "New engineer is assigned to exactly one branch: Mirpur 132 KV");
+    assert(newEngineer.branchId === "loc_kaliakoir_230", "New engineer is assigned to Kaliakoir 230 KV");
   } catch (err) {
     assert(false, `Admin account creation failed: ${err.message}`);
+  }
+
+  // 5. Engineer Login with new credentials
+  try {
+    const { user, profile } = await authService.login("engineer.tanvir.test@ccce.com.bd", "eng123Password");
+    assert(user && profile.role === "Branch Engineer", "Engineer login succeeds with role 'Branch Engineer'");
+    assert(profile.branchId === "loc_kaliakoir_230", "Engineer has verified assigned branch: Kaliakoir 230 KV");
+  } catch (err) {
+    assert(false, `Engineer login failed: ${err.message}`);
+  }
+
+  // 6. Disabled Account Handling
+  try {
+    const disabledEngineer = await authService.createEngineerAccount(adminProfile, {
+      fullName: "Suspended Staff",
+      email: "disabled.staff.test@ccce.com.bd",
+      password: "staffPassword123",
+      role: "Branch Engineer",
+      branchId: "loc_mirpur_132",
+      branchName: "Mirpur 132 KV Substation"
+    });
+    // Set to inactive via authService
+    await authService.setUserActiveStatus(adminProfile, disabledEngineer.uid, false);
+    await authService.login("disabled.staff.test@ccce.com.bd", "staffPassword123");
+    assert(false, "Disabled user should not be able to log in");
+  } catch (err) {
+    assert(err.message.includes("deactivated") || err.message.includes("disabled"), "Disabled account blocked with deactivation message");
   }
 
   // 7. Logout test

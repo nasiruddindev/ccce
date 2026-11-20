@@ -28,66 +28,34 @@ const safeStorage = {
 
 // Fallback development mock users for instant testing when live Firebase keys are pending
 const getLocalDevUsers = () => {
-  const saved = safeStorage.getItem("voltflow_auth_users");
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {}
-  }
   const defaults = [
     {
       uid: "usr_admin_001",
       email: "admin@ccce.com.bd",
       password: "admin123",
-      fullName: "Engr. Rafiqul Islam",
-      phone: "+880 1711-234567",
+      fullName: "Engr. Rafiqul Islam (Main Admin)",
+      phone: "+880 1711-000001",
       role: "Main Admin",
       branchId: "loc_ccce_main",
       branchName: "CCCE Central Main Branch",
       department: "CCCE Central HQ & Executive Administration",
       isActive: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      uid: "usr_admin_002",
-      email: "admin@voltflow.com",
-      password: "admin123",
-      fullName: "Engr. Rafiqul Islam",
-      phone: "+880 1711-234567",
-      role: "Main Admin",
-      branchId: "loc_ccce_main",
-      branchName: "CCCE Central Main Branch",
-      department: "CCCE Central HQ & Executive Administration",
-      isActive: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      uid: "usr_eng_002",
-      email: "engineer.tanvir@voltflow.com",
-      password: "eng123", // For development testing
-      fullName: "Engr. Tanvir Ahmed",
-      phone: "+880 1819-876543",
-      role: "Branch Engineer",
-      branchId: "loc_kaliakoir_230",
-      branchName: "Kaliakoir 230 KV Substation",
-      department: "Substation Protection & Testing",
-      isActive: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      uid: "usr_eng_003",
-      email: "disabled.user@voltflow.com",
-      password: "user123",
-      fullName: "Suspended Staff",
-      phone: "+880 1900-000000",
-      role: "Branch Engineer",
-      branchId: "loc_mirpur_132",
-      branchName: "Mirpur 132 KV Substation",
-      department: "Maintenance",
-      isActive: false, // Testing disabled account handling
       createdAt: new Date().toISOString()
     }
   ];
+
+  const saved = safeStorage.getItem("voltflow_auth_users");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Strip out legacy mock/demo users, keeping only admin@ccce.com.bd and newly created accounts
+        const cleaned = parsed.filter(u => u.email === "admin@ccce.com.bd" || !u.email.includes("voltflow.com"));
+        if (cleaned.length > 0) return cleaned;
+      }
+    } catch {}
+  }
+
   safeStorage.setItem("voltflow_auth_users", JSON.stringify(defaults));
   return defaults;
 };

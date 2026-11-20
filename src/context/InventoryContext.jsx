@@ -8,6 +8,8 @@ import {
   initialUsers,
   mockNotifications
 } from "../mockData";
+import { db, isFirebaseConfigured } from "../services/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const InventoryContext = createContext();
 
@@ -63,11 +65,19 @@ export const InventoryProvider = ({ children }) => {
   });
 
   const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem("voltflow_users_v3");
+    try {
+      localStorage.removeItem("voltflow_users");
+      localStorage.removeItem("voltflow_users_v2");
+      localStorage.removeItem("voltflow_users_v3");
+    } catch {}
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("voltflow_users_v4") : null;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.some(u => u.branchId === "loc_ccce_main")) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const filtered = parsed.filter(u => u.email === "admin@ccce.com.bd" || !u.email.includes("voltflow.com"));
+          if (filtered.length > 0) return filtered;
+        }
       } catch (e) {}
     }
     return initialUsers;
@@ -113,8 +123,33 @@ export const InventoryProvider = ({ children }) => {
     localStorage.setItem("voltflow_movements_v3", JSON.stringify(movements));
   }, [movements]);
 
+  // Real-time synchronization of users with Firestore if connected
   useEffect(() => {
-    localStorage.setItem("voltflow_users_v3", JSON.stringify(users));
+    let unsubscribe = () => {};
+    if (isFirebaseConfigured && db) {
+      try {
+        const usersCol = collection(db, "users");
+        unsubscribe = onSnapshot(usersCol, (snapshot) => {
+          if (!snapshot.empty) {
+            const firestoreUsers = snapshot.docs.map(doc => ({
+              id: doc.id,
+              name: doc.data().fullName || doc.data().name || "Main Admin",
+              ...doc.data()
+            }));
+            setUsers(firestoreUsers);
+          }
+        }, (err) => {
+          console.warn("Firestore users sync notice:", err);
+        });
+      } catch (e) {
+        console.warn("Firestore sync setup error:", e);
+      }
+    }
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("voltflow_users_v4", JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
@@ -378,6 +413,7 @@ export const InventoryProvider = ({ children }) => {
     localStorage.removeItem("voltflow_transfers_v3");
     localStorage.removeItem("voltflow_movements_v3");
     localStorage.removeItem("voltflow_users_v3");
+    localStorage.removeItem("voltflow_users_v4");
     setBranches(initialBranches);
     setProducts(initialProducts);
     setCategories(initialCategories);

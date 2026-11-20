@@ -934,6 +934,7 @@ export const initialUsers = [
   {
     id: "usr_1",
     name: "Engr. Rafiqul Islam",
+    fullName: "Engr. Rafiqul Islam",
     email: "admin@ccce.com.bd",
     role: "Main Admin",
     branchId: "loc_ccce_main",
@@ -943,58 +944,6 @@ export const initialUsers = [
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80",
     joinedDate: "2015-06-01",
     department: "CCCE Central HQ & Executive Directorate"
-  },
-  {
-    id: "usr_2",
-    name: "Engr. Tanvir Ahmed",
-    email: "tanvir.engineer@voltflow.com",
-    role: "Branch Engineer",
-    branchId: "loc_kaliakoir_230",
-    branchName: "Kaliakoir 230 KV Substation",
-    phone: "+880 1819-876543",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80",
-    joinedDate: "2022-01-10",
-    department: "Substation Protection & Testing"
-  },
-  {
-    id: "usr_3",
-    name: "Engr. Sajjad Hossain",
-    email: "sajjad.engineer@voltflow.com",
-    role: "Branch Engineer",
-    branchId: "loc_kobirpur_230",
-    branchName: "Kobirpur 230 KV Substation",
-    phone: "+880 1912-345678",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-    joinedDate: "2021-02-01",
-    department: "Grid Transmission & Maintenance"
-  },
-  {
-    id: "usr_4",
-    name: "Project Lead Mahmudul Hasan",
-    email: "mahmud.mirpur@voltflow.com",
-    role: "Branch Engineer",
-    branchId: "loc_mirpur_132",
-    branchName: "Mirpur 132 KV Substation",
-    phone: "+880 1611-998877",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
-    joinedDate: "2021-08-15",
-    department: "Urban Metropolitan Substation Division"
-  },
-  {
-    id: "usr_5",
-    name: "Engr. Farhana Yasmin",
-    email: "farhana.tangail@voltflow.com",
-    role: "Branch Engineer",
-    branchId: "loc_tangail_230",
-    branchName: "Tangail 230 KV Substation",
-    phone: "+880 1788-991122",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-    joinedDate: "2023-04-12",
-    department: "Regional Power Network Dispatch"
   }
 ];
 
