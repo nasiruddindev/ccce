@@ -154,14 +154,21 @@ export const authService = {
           throw new Error("Your account has been deactivated. Please contact your Main Administrator.");
         }
 
+        const authUser = {
+          uid: profile.uid,
+          email: profile.email,
+          displayName: profile.fullName || profile.name || user.displayName || "Authenticated Staff"
+        };
+
         safeStorage.setItem("voltflow_current_auth_session", JSON.stringify({
           uid: profile.uid,
           email: profile.email,
+          user: authUser,
           profile
         }));
         safeStorage.setItem("voltflow_role", profile.role);
 
-        return { user, profile };
+        return { user: authUser, profile };
       } catch (err) {
         if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
           throw new Error("Invalid email or password. Please verify your credentials.");
@@ -193,15 +200,22 @@ export const authService = {
     };
     delete profile.password;
 
+    const authUser = {
+      uid: profile.uid,
+      email: profile.email,
+      displayName: profile.fullName || profile.name || "Authenticated Staff"
+    };
+
     safeStorage.setItem("voltflow_current_auth_session", JSON.stringify({
       uid: profile.uid,
       email: profile.email,
+      user: authUser,
       profile
     }));
     safeStorage.setItem("voltflow_role", profile.role);
 
     return {
-      user: { uid: profile.uid, email: profile.email, displayName: profile.fullName },
+      user: authUser,
       profile
     };
   },

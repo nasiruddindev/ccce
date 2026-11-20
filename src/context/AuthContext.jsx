@@ -11,7 +11,14 @@ export const AuthProvider = ({ children }) => {
       const saved = localStorage.getItem("voltflow_current_auth_session");
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.user || null;
+        if (parsed.user) return parsed.user;
+        if (parsed.uid && parsed.email) {
+          return {
+            uid: parsed.uid,
+            email: parsed.email,
+            displayName: parsed.profile?.fullName || parsed.profile?.name || "Authenticated Staff"
+          };
+        }
       }
     } catch {}
     return null;
@@ -40,9 +47,6 @@ export const AuthProvider = ({ children }) => {
     // 1. If Firebase Auth is configured and active
     if (isFirebaseConfigured && auth) {
       unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (!currentUser && !userProfile) {
-          setIsLoading(true);
-        }
         if (firebaseUser) {
           try {
             const profile = await authService.getUserProfile(firebaseUser.uid);
@@ -52,25 +56,54 @@ export const AuthProvider = ({ children }) => {
               setUserProfile(null);
               setAuthError("Your account has been deactivated. Please contact your Main Administrator.");
             } else {
-              setCurrentUser(firebaseUser);
+              const verifiedUser = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: profile?.fullName || profile?.name || firebaseUser.displayName || "Authenticated Staff"
+              };
+              setCurrentUser(verifiedUser);
               const cleanProfile = profile || {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
-                fullName: firebaseUser.displayName || "Authenticated Staff",
+                fullName: verifiedUser.displayName,
+                name: verifiedUser.displayName,
                 role: "Branch Engineer",
-                branchId: "loc_gazaria_230",
+                branchId: "loc_kaliakoir_230",
                 isActive: true
               };
               setUserProfile(cleanProfile);
               localStorage.setItem("voltflow_role", cleanProfile.role);
+              localStorage.setItem("voltflow_current_auth_session", JSON.stringify({
+                uid: cleanProfile.uid,
+                email: cleanProfile.email,
+                user: verifiedUser,
+                profile: cleanProfile
+              }));
               setAuthError(null);
             }
           } catch (err) {
             console.error("Failed to load user profile:", err);
-            setCurrentUser(null);
-            setUserProfile(null);
           }
         } else {
+          // If Firebase Auth returns null (e.g. initial sync delay or offline), check active local storage session
+          const savedSession = localStorage.getItem("voltflow_current_auth_session");
+          if (savedSession) {
+            try {
+              const parsed = JSON.parse(savedSession);
+              if (parsed.profile && parsed.profile.isActive !== false) {
+                // Keep session active! Do NOT log user out on page reload!
+                const fallbackUser = parsed.user || {
+                  uid: parsed.uid,
+                  email: parsed.email,
+                  displayName: parsed.profile?.fullName || parsed.profile?.name || "Authenticated Staff"
+                };
+                setCurrentUser(fallbackUser);
+                setUserProfile(parsed.profile);
+                setIsLoading(false);
+                return;
+              }
+            } catch {}
+          }
           setCurrentUser(null);
           setUserProfile(null);
         }
