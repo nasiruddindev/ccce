@@ -187,6 +187,14 @@ export const AuthProvider = ({ children }) => {
     return updated;
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    return await authService.changeCurrentUserPassword(currentPassword, newPassword);
+  };
+
+  const adminResetPassword = async (targetUid, targetEmail, newPassword) => {
+    return await authService.adminResetUserPassword(userProfile, targetUid, targetEmail, newPassword);
+  };
+
   // Role helpers
   const userRole = userProfile?.role || "Branch Engineer";
   const isAdmin = userRole === "Main Admin";
@@ -208,6 +216,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateUserProfile,
+        changePassword,
+        adminResetPassword,
         isFirebaseConfigured
       }}
     >

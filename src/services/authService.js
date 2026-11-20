@@ -3,6 +3,10 @@ import {
   signOut, 
   createUserWithEmailAndPassword,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  sendPasswordResetEmail,
   getAuth
 } from "firebase/auth";
 import { 
@@ -303,6 +307,137 @@ export const authService = {
     }
 
     return { fullName: cleanName, name: cleanName, phone: cleanPhone, department: cleanDept };
+  },
+
+  /**
+   * Change current logged-in user's password.
+   * Can be used by any user (Main Admin or Branch Engineer) from their profile.
+   */
+  async changeCurrentUserPassword(currentPassword, newPassword) {
+    if (!newPassword || newPassword.trim().length < 6) {
+      throw new Error("New password must be at least 6 characters long.");
+    }
+    const cleanNewPass = newPassword.trim();
+
+    // 1. Live Firebase Auth update
+    if (isFirebaseConfigured && auth && auth.currentUser) {
+      const user = auth.currentUser;
+      if (currentPassword && user.email) {
+        try {
+          const credential = EmailAuthProvider.credential(user.email, currentPassword.trim());
+          await reauthenticateWithCredential(user, credential);
+        } catch (authErr) {
+          if (authErr.code === "auth/wrong-password" || authErr.code === "auth/invalid-credential") {
+            throw new Error("Current password is incorrect. Please verify your current password.");
+          }
+          console.warn("Reauthentication notice:", authErr.message);
+        }
+      }
+
+      try {
+        await updatePassword(user, cleanNewPass);
+      } catch (err) {
+        if (err.code === "auth/requires-recent-login") {
+          throw new Error("For security, please log out and log back in before changing your password.");
+        }
+        if (err.code === "auth/weak-password") {
+          throw new Error("Password is too weak. Please use at least 6 characters.");
+        }
+        throw err;
+      }
+
+      // Also record password update in Firestore if user doc exists
+      if (db) {
+        try {
+          const userRef = doc(db, "users", user.uid);
+          await updateDoc(userRef, {
+            passwordUpdatedAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+            mustChangePassword: false
+          });
+        } catch (e) {
+          console.warn("Firestore password update timestamp notice:", e);
+        }
+      }
+    }
+
+    // 2. Update local dev storage so instant testing on localhost continues to work seamlessly
+    const currentSession = safeStorage.getItem("voltflow_current_auth_session");
+    let currentEmail = "";
+    if (currentSession) {
+      try {
+        const parsed = JSON.parse(currentSession);
+        currentEmail = parsed.email || parsed.user?.email || "";
+      } catch {}
+    }
+
+    const localUsers = getLocalDevUsers();
+    let updatedAny = false;
+    const updated = localUsers.map(u => {
+      if ((currentEmail && u.email.toLowerCase() === currentEmail.toLowerCase()) || 
+          (auth?.currentUser?.email && u.email.toLowerCase() === auth.currentUser.email.toLowerCase())) {
+        updatedAny = true;
+        return { ...u, password: cleanNewPass };
+      }
+      return u;
+    });
+    if (updatedAny) {
+      safeStorage.setItem("voltflow_auth_users", JSON.stringify(updated));
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * Main Admin resets or sets a temporary password for any engineer.
+   */
+  async adminResetUserPassword(adminProfile, targetUid, targetEmail, newPassword) {
+    if (!adminProfile || adminProfile.role !== "Main Admin") {
+      throw new Error("Unauthorized: Only Main Admin can reset user passwords.");
+    }
+
+    if (!newPassword || newPassword.trim().length < 6) {
+      throw new Error("New password must be at least 6 characters long.");
+    }
+
+    const cleanPass = newPassword.trim();
+    const cleanEmail = (targetEmail || "").trim().toLowerCase();
+
+    // 1. Update Firestore user document
+    if (isFirebaseConfigured && db && targetUid) {
+      try {
+        const userRef = doc(db, "users", targetUid);
+        await updateDoc(userRef, {
+          tempPassword: cleanPass,
+          mustChangePassword: true,
+          passwordResetAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+          updatedAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
+        });
+      } catch (err) {
+        console.warn("Firestore admin password reset notice:", err);
+      }
+    }
+
+    // 2. Optionally send official password reset email via Firebase Auth if targetEmail is present
+    if (isFirebaseConfigured && auth && cleanEmail) {
+      try {
+        await sendPasswordResetEmail(auth, cleanEmail);
+      } catch (e) {
+        // Non-blocking; email service may not be active for non-public domains
+        console.warn("Firebase sendPasswordResetEmail notice:", e.message);
+      }
+    }
+
+    // 3. Update local dev storage so logging in as this user with newPassword works immediately
+    const localUsers = getLocalDevUsers();
+    const updated = localUsers.map(u => {
+      if (u.uid === targetUid || (cleanEmail && u.email.toLowerCase() === cleanEmail)) {
+        return { ...u, password: cleanPass, mustChangePassword: true };
+      }
+      return u;
+    });
+    safeStorage.setItem("voltflow_auth_users", JSON.stringify(updated));
+
+    return { success: true, email: cleanEmail };
   },
 
   /**
