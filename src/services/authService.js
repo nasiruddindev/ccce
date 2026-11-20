@@ -16,7 +16,7 @@ import {
   where,
   serverTimestamp 
 } from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp, getApps, deleteApp } from "firebase/app";
 import { auth, db, isFirebaseConfigured, getFirebaseConfig } from "./firebase.js";
 import { initialUsers } from "../mockData.js";
 
@@ -81,7 +81,7 @@ export const authService = {
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
-        const isMasterAdmin = cleanEmail === "admin@ccce.com.bd" || cleanEmail === "admin@voltflow.com";
+        const isMasterAdmin = cleanEmail === "admin@ccce.com.bd";
         let profile = userDoc.exists() ? userDoc.data() : null;
 
         if (!profile) {
@@ -105,17 +105,18 @@ export const authService = {
             }
           }
 
-          // Build strictly verified profile
-          const assignedRole = profile?.role 
-            ? profile.role 
-            : (isMasterAdmin ? "Main Admin" : "Branch Engineer");
+          // STRICT RBAC: ONLY admin@ccce.com.bd gets Main Admin. All other accounts are Branch Engineer!
+          const assignedRole = isMasterAdmin ? "Main Admin" : "Branch Engineer";
+          const assignedBranch = profile?.branchId || (isMasterAdmin ? "loc_ccce_main" : "loc_kaliakoir_230");
+          const assignedBranchName = profile?.branchName || (isMasterAdmin ? "CCCE Central Main Branch" : "Kaliakoir 230 KV Substation");
 
-          const assignedBranch = profile?.branchId || (isMasterAdmin ? "loc_ccce_main" : "loc_gazaria_230");
-          const assignedBranchName = profile?.branchName || (isMasterAdmin ? "CCCE Central Main Branch" : "Gazaria 230 KV Substation");
+          // Preserve exact name entered by the admin during user creation!
+          const realName = profile?.fullName || profile?.name || user.displayName || (isMasterAdmin ? "Engr. Rafiqul Islam (Main Admin)" : "Station Engineer");
 
           profile = {
             uid: user.uid,
-            fullName: profile?.fullName || user.displayName || (isMasterAdmin ? "Main Admin" : "Branch Engineer"),
+            fullName: realName,
+            name: realName,
             email: cleanEmail,
             phone: profile?.phone || "+880 1700-000000",
             role: assignedRole,
@@ -128,16 +129,18 @@ export const authService = {
 
           await setDoc(userDocRef, profile);
         } else {
-          // Profile exists: If this user is NOT master admin, but was mistakenly saved as Main Admin (old fallback bug),
-          // automatically correct them to Branch Engineer!
-          if (!isMasterAdmin && profile.role === "Main Admin") {
-            const correctedBranch = profile.branchId === "loc_ccce_main" ? "loc_gazaria_230" : (profile.branchId || "loc_gazaria_230");
+          // If this user is NOT master admin, strictly ensure their role is Branch Engineer
+          if (!isMasterAdmin) {
             profile.role = "Branch Engineer";
-            profile.branchId = correctedBranch;
+            if (profile.branchId === "loc_ccce_main") {
+              profile.branchId = "loc_kaliakoir_230";
+              profile.branchName = "Kaliakoir 230 KV Substation";
+            }
             try {
               await updateDoc(userDocRef, {
                 role: "Branch Engineer",
-                branchId: correctedBranch
+                branchId: profile.branchId,
+                branchName: profile.branchName
               });
             } catch (err) {
               console.warn("Profile role correction notice:", err);
@@ -235,6 +238,60 @@ export const authService = {
   },
 
   /**
+   * Update authenticated user's own profile (Name, Phone, Department)
+   */
+  async updateUserProfile(uid, { fullName, phone, department }) {
+    if (!uid) throw new Error("User identifier is required.");
+
+    const cleanName = fullName ? fullName.trim() : "";
+    const cleanPhone = phone ? phone.trim() : "";
+    const cleanDept = department ? department.trim() : "";
+
+    if (isFirebaseConfigured && db) {
+      try {
+        const userDocRef = doc(db, "users", uid);
+        await updateDoc(userDocRef, {
+          fullName: cleanName,
+          name: cleanName,
+          phone: cleanPhone,
+          department: cleanDept,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.warn("Firestore profile update notice:", err);
+      }
+    }
+
+    // Update local dev user storage if applicable
+    const localUsers = getLocalDevUsers();
+    const updated = localUsers.map(u => u.uid === uid ? {
+      ...u,
+      fullName: cleanName,
+      name: cleanName,
+      phone: cleanPhone,
+      department: cleanDept
+    } : u);
+    safeStorage.setItem("voltflow_auth_users", JSON.stringify(updated));
+
+    // Update active session storage
+    const currentSession = safeStorage.getItem("voltflow_current_auth_session");
+    if (currentSession) {
+      try {
+        const parsed = JSON.parse(currentSession);
+        if (parsed.profile) {
+          parsed.profile.fullName = cleanName;
+          parsed.profile.name = cleanName;
+          parsed.profile.phone = cleanPhone;
+          parsed.profile.department = cleanDept;
+          safeStorage.setItem("voltflow_current_auth_session", JSON.stringify(parsed));
+        }
+      } catch {}
+    }
+
+    return { fullName: cleanName, name: cleanName, phone: cleanPhone, department: cleanDept };
+  },
+
+  /**
    * Create an engineer account.
    * STRICT SECURITY RULE: Only Main Admin can create an engineer account!
    */
@@ -256,49 +313,80 @@ export const authService = {
 
     const assignedRole = "Branch Engineer";
     const cleanEmail = newUserData.email.trim().toLowerCase();
-    const tempPassword = newUserData.password || "VoltFlow@2026";
+    const tempPassword = newUserData.password?.trim() || "VoltFlow@2026";
+
+    if (tempPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters long.");
+    }
 
     // Firestore record payload
     const userPayload = {
-      fullName: newUserData.fullName,
+      fullName: newUserData.fullName.trim(),
+      name: newUserData.fullName.trim(),
       email: cleanEmail,
-      phone: newUserData.phone || "+880 1700-000000",
+      phone: newUserData.phone?.trim() || "+880 1700-000000",
       role: assignedRole,
       branchId: newUserData.branchId,
       branchName: newUserData.branchName || "Assigned Substation",
-      department: newUserData.department || "Field Engineering",
+      department: newUserData.department || "Substation Protection & Operations",
       isActive: true,
-      createdAt: new Date().toISOString()
+      createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
     };
 
-    let createdUid = `usr_${Date.now()}`;
+    let createdUid = null;
 
-    // Provision user in Firebase Authentication using secondary client app if online
+    // Provision user in Firebase Authentication using an isolated secondary client app
     if (isFirebaseConfigured) {
-      try {
-        const config = getFirebaseConfig();
-        if (config) {
-          const secondaryApp = getApps().find(a => a.name === "SecondaryAuthApp") || initializeApp(config, "SecondaryAuthApp");
+      const config = getFirebaseConfig();
+      if (config) {
+        const secAppName = `SecApp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        let secondaryApp = null;
+        try {
+          secondaryApp = initializeApp(config, secAppName);
           const secondaryAuth = getAuth(secondaryApp);
           const cred = await createUserWithEmailAndPassword(secondaryAuth, cleanEmail, tempPassword);
           createdUid = cred.user.uid;
-          await signOut(secondaryAuth);
+        } catch (authErr) {
+          if (authErr.code === "auth/email-already-in-use") {
+            // Email is already registered in Firebase Auth.
+            // Check if existing doc exists in Firestore
+            try {
+              const q = query(collection(db, "users"), where("email", "==", cleanEmail));
+              const snap = await getDocs(q);
+              if (!snap.empty) {
+                createdUid = snap.docs[0].id;
+              }
+            } catch {}
+          } else if (authErr.code === "auth/weak-password") {
+            throw new Error("Password is too weak. Please use at least 6 characters.");
+          } else if (authErr.code === "auth/invalid-email") {
+            throw new Error("Invalid corporate email format.");
+          } else {
+            console.warn("Secondary Auth notice:", authErr.message);
+          }
+        } finally {
+          if (secondaryApp) {
+            try {
+              await deleteApp(secondaryApp);
+            } catch {}
+          }
         }
-      } catch (authErr) {
-        console.warn("Secondary Auth notice:", authErr.message);
       }
+    }
+
+    if (!createdUid) {
+      createdUid = `usr_${Date.now()}`;
     }
 
     userPayload.uid = createdUid;
 
+    // Save directly to Firestore
     if (isFirebaseConfigured && db) {
       try {
-        await setDoc(doc(db, "users", createdUid), {
-          ...userPayload,
-          createdAt: serverTimestamp()
-        });
+        await setDoc(doc(db, "users", createdUid), userPayload, { merge: true });
       } catch (err) {
         console.error("Firestore user creation error:", err);
+        throw new Error(`Failed to save user in Cloud Firestore: ${err.message}`);
       }
     }
 

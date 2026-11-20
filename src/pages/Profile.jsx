@@ -14,8 +14,10 @@ import { useAuth } from "../context/AuthContext";
 import Badge from "../components/common/Badge";
 
 export default function Profile() {
-  const { currentUser, userProfile, userRole, logout } = useAuth();
+  const { currentUser, userProfile, userRole, logout, updateUserProfile } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [name, setName] = useState(userProfile?.fullName || userProfile?.name || currentUser?.displayName || "Staff Member");
   const [phone, setPhone] = useState(userProfile?.phone || "+880 1700-000000");
@@ -30,10 +32,23 @@ export default function Profile() {
     }
   }, [userProfile, currentUser]);
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsUpdating(true);
+    setErrorMsg("");
+    try {
+      await updateUserProfile({
+        fullName: name,
+        phone,
+        department
+      });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to update profile.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const displayName = userProfile?.fullName || userProfile?.name || currentUser?.displayName || "Staff Member";
@@ -50,6 +65,12 @@ export default function Profile() {
           Personal identification, assigned site station, and role permissions.
         </p>
       </div>
+
+      {errorMsg && (
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 animate-in fade-in">
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {isSaved && (
         <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
@@ -147,10 +168,11 @@ export default function Profile() {
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+              disabled={isUpdating}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60"
             >
               <Save className="w-4 h-4" />
-              <span>Save Profile</span>
+              <span>{isUpdating ? "Saving..." : "Save Profile"}</span>
             </button>
           </div>
         </form>

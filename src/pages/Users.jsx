@@ -80,17 +80,23 @@ export default function Users() {
       return;
     }
 
+    if (newUser.password && newUser.password.trim().length > 0 && newUser.password.trim().length < 6) {
+      setErrorMessage("Password must be at least 6 characters long.");
+      return;
+    }
+
     const branch = branches.find((b) => b.id === newUser.branchId);
 
     setIsLoading(true);
     try {
-      await authService.createEngineerAccount(userProfile, {
+      const createdAccount = await authService.createEngineerAccount(userProfile, {
         ...newUser,
         branchName: branch?.name || "Assigned Substation"
       });
 
       addUser({
-        id: `usr_${Date.now()}`,
+        id: createdAccount.uid,
+        uid: createdAccount.uid,
         name: newUser.fullName,
         fullName: newUser.fullName,
         email: newUser.email,
@@ -565,11 +571,10 @@ export default function Users() {
                 User Role
               </label>
               <select
-                value={editFormData.role}
-                onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                disabled
+                value="Branch Engineer"
+                className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 cursor-not-allowed"
               >
-                <option value="Main Admin">Main Admin (Full Access)</option>
                 <option value="Branch Engineer">Branch Engineer (Restricted to Substation)</option>
               </select>
             </div>

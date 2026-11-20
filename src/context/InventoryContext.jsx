@@ -133,7 +133,7 @@ export const InventoryProvider = ({ children }) => {
           if (!snapshot.empty) {
             const firestoreUsers = snapshot.docs.map(doc => ({
               id: doc.id,
-              name: doc.data().fullName || doc.data().name || "Main Admin",
+              name: doc.data().fullName || doc.data().name || (doc.data().role === "Main Admin" ? "Engr. Rafiqul Islam (Main Admin)" : "Station Engineer"),
               ...doc.data()
             }));
             setUsers(firestoreUsers);
@@ -154,6 +154,21 @@ export const InventoryProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem("voltflow_role", currentRole);
+  }, [currentRole]);
+
+  useEffect(() => {
+    const syncRole = () => {
+      const savedRole = localStorage.getItem("voltflow_role");
+      if (savedRole && savedRole !== currentRole) {
+        setCurrentRole(savedRole);
+      }
+    };
+    window.addEventListener("storage", syncRole);
+    window.addEventListener("focus", syncRole);
+    return () => {
+      window.removeEventListener("storage", syncRole);
+      window.removeEventListener("focus", syncRole);
+    };
   }, [currentRole]);
 
   // Helper calculations

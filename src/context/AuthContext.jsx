@@ -118,6 +118,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUserProfile = async (fields) => {
+    const uid = userProfile?.uid || currentUser?.uid;
+    if (!uid) throw new Error("No active session.");
+    const updated = await authService.updateUserProfile(uid, fields);
+    setUserProfile((prev) => ({
+      ...prev,
+      ...updated
+    }));
+    return updated;
+  };
+
   // Role helpers
   const userRole = userProfile?.role || "Branch Engineer";
   const isAdmin = userRole === "Main Admin";
@@ -138,6 +149,7 @@ export const AuthProvider = ({ children }) => {
         setAuthError,
         login,
         logout,
+        updateUserProfile,
         isFirebaseConfigured
       }}
     >
