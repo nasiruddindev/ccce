@@ -8,4 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  appType: 'spa',
+  server: {
+    historyApiFallback: true
+  },
+  preview: {
+    historyApiFallback: true
+  }
 })

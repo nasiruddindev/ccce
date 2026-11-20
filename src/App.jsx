@@ -26,6 +26,7 @@ const Users = lazy(() => import("./pages/Users"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Profile = lazy(() => import("./pages/Profile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Production Loading Fallback Component
 function PageLoader() {
@@ -105,8 +106,8 @@ export default function App() {
                     }
                   />
 
-                  {/* Catch-all redirect */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  {/* Catch-all unmatched route */}
+                  <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
             </Suspense>

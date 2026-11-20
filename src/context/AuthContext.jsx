@@ -6,9 +6,32 @@ import { authService } from "../services/authService";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("voltflow_current_auth_session");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.user || null;
+      }
+    } catch {}
+    return null;
+  });
+
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem("voltflow_current_auth_session");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.profile || null;
+      }
+    } catch {}
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("voltflow_current_auth_session") : null;
+    return !saved;
+  });
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
@@ -17,7 +40,9 @@ export const AuthProvider = ({ children }) => {
     // 1. If Firebase Auth is configured and active
     if (isFirebaseConfigured && auth) {
       unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        setIsLoading(true);
+        if (!currentUser && !userProfile) {
+          setIsLoading(true);
+        }
         if (firebaseUser) {
           try {
             const profile = await authService.getUserProfile(firebaseUser.uid);
